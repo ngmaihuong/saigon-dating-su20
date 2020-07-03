@@ -1,3 +1,8 @@
+#Saigon Dating Project
+#Mai-Huong, Nguyen
+#Date created: 07/01/2020
+#Date last updated: 07/03/2020
+
 #Opening Tools ----
 library(ggplot2)
 library(dplyr)
@@ -65,8 +70,10 @@ df <- df %>% separate(StartDate, c('empty', 'StartDate'), sep="020-") %>%
 
 #Saving Data Frame ----
 write.csv(df, "Data20200702-Ced.csv", row.names = F)
+rownames(df) <- NULL
 
 #Visualization ----
+brand = brand
 
 #Response Date and Time ----
 by_date <- df %>% 
@@ -78,10 +85,7 @@ by_date <- df %>%
 df %>% ggplot(aes(x=StartDate)) + geom_bar(fill="#4b82a0") + 
   labs(title="Số lượng survey nhận được theo ngày", x="Ngày (mm-dd)",y="Số lượng") + 
   theme(
-    plot.title = element_text(family='serif', hjust=0.5, face="bold"),
-    axis.title.x = element_text(family='serif'),
-    axis.title.y = element_text(family='serif')
-  )
+    plot.title = element_text(hjust=0.5, face="bold"))
   
 
 #Adjusting time settings
@@ -160,8 +164,8 @@ by_gender$label <- paste0(by_gender$Gender, "\n value: ", by_gender$ResponseQuan
 
 ggplot(by_gender, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=Gender)) +
   geom_rect(colour="White") +
-  geom_text(aes(x=2.4, y=labelPosition, label=label), size=3, color=c("#d3a0b7", "#dfc9b1", "#4b82a0"), inherit.aes = F) + # x here controls label position (inner / outer)
-  scale_fill_manual(values=c("#d3a0b7", "#dfc9b1", "#4b82a0")) +
+  geom_text(aes(x=2.4, y=labelPosition, label=label), size=3, color=brand, inherit.aes = F) + # x here controls label position (inner / outer)
+  scale_fill_manual(values=brand) +
   coord_polar(theta="y") +
   xlim(c(1, 4)) +
   theme_void() + 
@@ -175,5 +179,5 @@ df_3 %>% group_by(Gender, BirthYear) %>%
   geom_bar(position="stack", stat="identity") + 
   labs(title="Phân loại giới tính và năm sinh", x="Năm sinh", y="Số lượng") + 
   theme(plot.title = element_text(hjust=0.5, face="bold")) + coord_flip() +
-  scale_fill_manual(values=c("#d3a0b7", "#dfc9b1", "#4b82a0"), 
+  scale_fill_manual(values=brand, 
                     name="Giới tính")
