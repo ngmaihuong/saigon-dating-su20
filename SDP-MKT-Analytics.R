@@ -1,0 +1,179 @@
+#Opening Tools ----
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(lubridate)
+
+#Setting Working Directory ----
+setwd("~/Downloads/Data as of 7:2 10.20PM")
+
+#Importing Data ----
+df <- read.csv('19 SURVEY_July 4, 2020_04.34.csv', 
+                   header = TRUE,
+                   na.strings = "") #Code can be used for file with choice texts as well
+df1 <- read.csv('19 SURVEY_July 4, 2020_04.14.csv', 
+               header = TRUE,
+               na.strings = "")
+df$X2_1 <- df1$X2_1
+rm(df1)
+
+df <- df[-c(1,2), ]
+rownames(df) <- NULL
+
+#Transforming Data Frame ----
+
+#Adjusting time settings (not necessary)
+df$StartDate <- ymd_hms(df$StartDate, tz="Asia/Bangkok")
+df$EndDate <- ymd_hms(df$EndDate, tz="Asia/Bangkok")
+
+#Reframing Data Frame
+colnames(df) #to identify variables to keep and their names
+df <- df %>% select(StartDate, 
+#                            EndDate,
+                            Duration..in.seconds.,
+                            RecordedDate,
+                            X2_1:X7,
+                            X1.1:X5.1,
+                            X9)
+
+oldnames = colnames(df)
+newnames = c("StartDate", 
+#             "EndDate", 
+             "Duration", 
+             "RecordedDate", 
+             "BirthYear",
+             "Gender",
+             "PartnerGender",
+             "Education",
+             "EmploymentStatus",
+             "StudyAbroad",
+             "P2Q1",
+             "P2Q2",
+             "P2Q3",
+             "P2Q4",
+             "P2Q5",
+             "Budget")
+df <- df %>% rename_at(vars(oldnames), ~ newnames)
+df <- na.omit(df)
+
+#Conditioning Time Variables ----
+df <- df %>% separate(StartDate, c("StartDate","StartTime"), sep=" ")
+#  separate(EndDate, c("EndDate", "EndTime"), sep=" ")
+df <- df %>% separate(StartDate, c('empty', 'StartDate'), sep="020-") %>%
+#  separate(EndDate, c('empty1', 'EndDate'), sep="020-") %>%
+  select(-empty)#, -empty1)
+
+#Saving Data Frame ----
+write.csv(df, "Data20200702-Ced.csv", row.names = F)
+
+#Visualization ----
+
+#Response Date and Time ----
+by_date <- df %>% 
+  group_by(StartDate) %>% 
+  count(StartDate) %>% 
+  arrange(desc(StartDate)) %>% 
+  rename('ResponseQuantity'=n)
+
+df %>% ggplot(aes(x=StartDate)) + geom_bar(fill="#4b82a0") + 
+  labs(title="Số lượng survey nhận được theo ngày", x="Ngày (mm-dd)",y="Số lượng") + 
+  theme(
+    plot.title = element_text(family='serif', hjust=0.5, face="bold"),
+    axis.title.x = element_text(family='serif'),
+    axis.title.y = element_text(family='serif')
+  )
+  
+
+#Adjusting time settings
+df$StartTime <- hms(df$StartTime)
+#df$EndTime <- hms(df$EndTime)
+
+df$StartHour <- hour(df$StartTime)
+#df$EndTime <- hour(df$EndTime)
+
+df %>% ggplot(aes(x=StartHour)) + geom_bar(fill="#4b82a0") +  
+  labs(title="Số lượng survey nhận được theo giờ", x="Giờ",y="Số lượng") + 
+  theme(plot.title = element_text(hjust=0.5, face="bold"))
+
+#Before the pinned post
+df_1 <- df %>% filter(StartDate < "06-30")
+
+df_1 %>% ggplot(aes(x=StartHour)) + geom_bar(fill="#4b82a0") +  
+  labs(title="Số lượng survey nhận được theo giờ \n(trước khi đăng pinned post)", x="Giờ", y="Số lượng") + 
+  theme(plot.title = element_text(hjust=0.5, face="bold"))
+
+#After the pinned post
+df_2 <- df %>% filter(StartDate >= "06-30")
+
+df_2 %>% ggplot(aes(x=StartHour)) + geom_bar(fill="#4b82a0") +  
+  labs(title="Số lượng survey nhận được theo giờ \n(sau khi đăng pinned post)", x="Giờ", y="Số lượng") + 
+  theme(plot.title = element_text(hjust=0.5, face="bold"))
+
+# #Response Duration
+# df$Duration <- as.numeric(levels(df$Duration))[df$Duration]
+# 
+# df %>% #(df$Duration != 73763) %>% #probably outlier
+#   ggplot(aes(x=StartHour, y=Duration, color=Duration)) + geom_point()
+
+#Gender and Study Abroad Experience ----
+df_3 <- df
+df_3 <- separate(df_3, PartnerGender, c("PartnerGender1", "PartnerGender2"), sep=",")
+
+df_3_a <- df_3[is.na(df_3$PartnerGender2), ]
+df_3$PartnerGender2[is.na(df_3$PartnerGender2)] <- df_3_a$PartnerGender1
+
+df_3_b <- df_3[(df_3$Gender == df_3$PartnerGender1)|(df_3$Gender == df_3$PartnerGender2), ]
+df_3_b$Gender <- 3
+df_3[c(rownames(df_3_b)),] <- df_3_b
+df_3$Gender <- ifelse(df_3$Gender == 1, "Nam", ifelse(df_3$Gender == 2, "Nữ", "LGBTQ+"))
+
+#df_3$StudyAbroad <- ifelse(df_3$StudyAbroad == 1, "Có", "Không")
+
+df_3 %>% group_by(Gender, StudyAbroad) %>%
+  summarise(count=n()) %>%
+  ggplot(aes(fill=StudyAbroad, y=count, x=Gender)) + 
+  geom_bar(position="stack", stat="identity") + 
+  scale_fill_manual(values=c("#dfc9b1", "#d3a0b7"), 
+                    name="Du học sinh?",
+                    labels=c("Có", "Không")) +
+  labs(title="Phân loại giới tính và du học sinh", x="Giới tính", y="Số lượng") + 
+  theme(plot.title = element_text(hjust=0.5, face="bold"))
+
+# Compute percentages
+by_gender <- df_3 %>% 
+  group_by(Gender) %>% 
+  count(Gender) %>% 
+  arrange(Gender) %>% 
+  rename('ResponseQuantity'=n)
+
+by_gender$fraction <- by_gender$ResponseQuantity / sum(by_gender$ResponseQuantity)
+by_gender$ymax <- cumsum(by_gender$fraction)
+
+# Compute the bottom of each rectangle
+by_gender$ymin <- c(0, head(by_gender$ymax, n=-1))
+
+# Compute label position
+by_gender$labelPosition <- (by_gender$ymax + by_gender$ymin) / 2
+
+# Compute a good label
+by_gender$label <- paste0(by_gender$Gender, "\n value: ", by_gender$ResponseQuantity)
+
+ggplot(by_gender, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=Gender)) +
+  geom_rect(colour="White") +
+  geom_text(aes(x=2.4, y=labelPosition, label=label), size=3, color=c("#d3a0b7", "#dfc9b1", "#4b82a0"), inherit.aes = F) + # x here controls label position (inner / outer)
+  scale_fill_manual(values=c("#d3a0b7", "#dfc9b1", "#4b82a0")) +
+  coord_polar(theta="y") +
+  xlim(c(1, 4)) +
+  theme_void() + 
+  theme(legend.position = "none", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=18)) +
+  labs(title="Tỉ lệ giới tính tham gia survey")
+
+#Age and Gender ----
+df_3 %>% group_by(Gender, BirthYear) %>%
+  summarise(count=n()) %>%
+  ggplot(aes(fill=Gender, y=count, x=BirthYear)) + 
+  geom_bar(position="stack", stat="identity") + 
+  labs(title="Phân loại giới tính và năm sinh", x="Năm sinh", y="Số lượng") + 
+  theme(plot.title = element_text(hjust=0.5, face="bold")) + coord_flip() +
+  scale_fill_manual(values=c("#d3a0b7", "#dfc9b1", "#4b82a0"), 
+                    name="Giới tính")
