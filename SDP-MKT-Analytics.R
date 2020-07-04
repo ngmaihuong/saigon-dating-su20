@@ -14,11 +14,11 @@ setwd("~/Downloads/Data as of 7:2 10.20PM")
 
 #Importing Data ----
 df <- read.csv('19 SURVEY_July 4, 2020_04.34.csv', 
-                   header = TRUE,
-                   na.strings = "") #Code can be used for file with choice texts as well
-df1 <- read.csv('19 SURVEY_July 4, 2020_04.14.csv', 
                header = TRUE,
-               na.strings = "")
+               na.strings = "") #Code can be used for file with choice texts as well
+df1 <- read.csv('19 SURVEY_July 4, 2020_04.14.csv', 
+                header = TRUE,
+                na.strings = "")
 df$X2_1 <- df1$X2_1
 rm(df1)
 
@@ -30,20 +30,21 @@ rownames(df) <- NULL
 #Adjusting time settings (not necessary)
 df$StartDate <- ymd_hms(df$StartDate, tz="Asia/Bangkok")
 df$EndDate <- ymd_hms(df$EndDate, tz="Asia/Bangkok")
+df$RecordedDate <- ymd_hms(df$RecordedDate, tz="Asia/Bangkok")
 
 #Reframing Data Frame
 colnames(df) #to identify variables to keep and their names
 df <- df %>% select(StartDate, 
-#                            EndDate,
-                            Duration..in.seconds.,
-                            RecordedDate,
-                            X2_1:X7,
-                            X1.1:X5.1,
-                            X9)
+                    #                            EndDate,
+                    Duration..in.seconds.,
+                    RecordedDate,
+                    X2_1:X7,
+                    X1.1:X5.1,
+                    X9)
 
 oldnames = colnames(df)
 newnames = c("StartDate", 
-#             "EndDate", 
+             #             "EndDate", 
              "Duration", 
              "RecordedDate", 
              "BirthYear",
@@ -65,7 +66,7 @@ df <- na.omit(df)
 df <- df %>% separate(StartDate, c("StartDate","StartTime"), sep=" ")
 #  separate(EndDate, c("EndDate", "EndTime"), sep=" ")
 df <- df %>% separate(StartDate, c('empty', 'StartDate'), sep="020-") %>%
-#  separate(EndDate, c('empty1', 'EndDate'), sep="020-") %>%
+  #  separate(EndDate, c('empty1', 'EndDate'), sep="020-") %>%
   select(-empty)#, -empty1)
 
 #Saving Data Frame ----
@@ -73,7 +74,7 @@ write.csv(df, "Data20200702-Ced.csv", row.names = F)
 rownames(df) <- NULL
 
 #Visualization ----
-brand = brand
+brand = c("#d3a0b7", "#dfc9b1", "#4b82a0")
 
 #Response Date and Time ----
 by_date <- df %>% 
@@ -86,7 +87,6 @@ df %>% ggplot(aes(x=StartDate)) + geom_bar(fill="#4b82a0") +
   labs(title="Số lượng survey nhận được theo ngày", x="Ngày (mm-dd)",y="Số lượng") + 
   theme(
     plot.title = element_text(hjust=0.5, face="bold"))
-  
 
 #Adjusting time settings
 df$StartTime <- hms(df$StartTime)
@@ -100,40 +100,50 @@ df %>% ggplot(aes(x=StartHour)) + geom_bar(fill="#4b82a0") +
   theme(plot.title = element_text(hjust=0.5, face="bold"))
 
 #Before the pinned post
-df_1 <- df %>% filter(StartDate < "06-30")
+df1 <- df %>% filter(StartDate < "06-30")
 
-df_1 %>% ggplot(aes(x=StartHour)) + geom_bar(fill="#4b82a0") +  
+df1 %>% ggplot(aes(x=StartHour)) + geom_bar(fill="#4b82a0") +  
   labs(title="Số lượng survey nhận được theo giờ \n(trước khi đăng pinned post)", x="Giờ", y="Số lượng") + 
   theme(plot.title = element_text(hjust=0.5, face="bold"))
 
 #After the pinned post
-df_2 <- df %>% filter(StartDate >= "06-30")
+df2 <- df %>% filter(StartDate >= "06-30")
 
-df_2 %>% ggplot(aes(x=StartHour)) + geom_bar(fill="#4b82a0") +  
+df2 %>% ggplot(aes(x=StartHour)) + geom_bar(fill="#4b82a0") +  
   labs(title="Số lượng survey nhận được theo giờ \n(sau khi đăng pinned post)", x="Giờ", y="Số lượng") + 
   theme(plot.title = element_text(hjust=0.5, face="bold"))
 
-# #Response Duration
-# df$Duration <- as.numeric(levels(df$Duration))[df$Duration]
-# 
-# df %>% #(df$Duration != 73763) %>% #probably outlier
-#   ggplot(aes(x=StartHour, y=Duration, color=Duration)) + geom_point()
+# Response Duration ----
+df$Duration <- as.numeric(levels(df$Duration))[df$Duration]
+
+# df %>% filter(df$Duration != 73763) %>% #probably outlier
+#   ggplot(aes(x=as.numeric(as.character(BirthYear)), y=log(Duration))) +
+#   geom_point(color="#4b82a0") +
+#   geom_smooth(method=loess, formula = y~x, level=0.99)
+
+df$Age <- 2021 - as.numeric(as.character(df$BirthYear))
+
+df %>% filter(df$Duration != 73763) %>% #probably outlier
+  ggplot(aes(x=Age, y=log(Duration))) +
+  geom_point(color="#4b82a0") #+ geom_smooth(method=loess, formula = y~x, level=0.99)
+
+cor(df$Age, df$Duration) #no linear relationship
 
 #Gender and Study Abroad Experience ----
-df_3 <- df
-df_3 <- separate(df_3, PartnerGender, c("PartnerGender1", "PartnerGender2"), sep=",")
+df3 <- df
+df3 <- separate(df3, PartnerGender, c("PartnerGender1", "PartnerGender2"), sep=",")
 
-df_3_a <- df_3[is.na(df_3$PartnerGender2), ]
-df_3$PartnerGender2[is.na(df_3$PartnerGender2)] <- df_3_a$PartnerGender1
+df3_a <- df3[is.na(df3$PartnerGender2), ]
+df3$PartnerGender2[is.na(df3$PartnerGender2)] <- df3_a$PartnerGender1
 
-df_3_b <- df_3[(df_3$Gender == df_3$PartnerGender1)|(df_3$Gender == df_3$PartnerGender2), ]
-df_3_b$Gender <- 3
-df_3[c(rownames(df_3_b)),] <- df_3_b
-df_3$Gender <- ifelse(df_3$Gender == 1, "Nam", ifelse(df_3$Gender == 2, "Nữ", "LGBTQ+"))
+df3_b <- df3[(df3$Gender == df3$PartnerGender1)|(df3$Gender == df3$PartnerGender2), ]
+df3_b$Gender <- 3
+df3[c(rownames(df3_b)),] <- df3_b
+df3$Gender <- ifelse(df3$Gender == 1, "Nam", ifelse(df3$Gender == 2, "Nữ", "LGBTQ+"))
 
-#df_3$StudyAbroad <- ifelse(df_3$StudyAbroad == 1, "Có", "Không")
+#df3$StudyAbroad <- ifelse(df3$StudyAbroad == 1, "Có", "Không")
 
-df_3 %>% group_by(Gender, StudyAbroad) %>%
+df3 %>% group_by(Gender, StudyAbroad) %>%
   summarise(count=n()) %>%
   ggplot(aes(fill=StudyAbroad, y=count, x=Gender)) + 
   geom_bar(position="stack", stat="identity") + 
@@ -144,7 +154,7 @@ df_3 %>% group_by(Gender, StudyAbroad) %>%
   theme(plot.title = element_text(hjust=0.5, face="bold"))
 
 # Compute percentages
-by_gender <- df_3 %>% 
+by_gender <- df3 %>% 
   group_by(Gender) %>% 
   count(Gender) %>% 
   arrange(Gender) %>% 
@@ -173,11 +183,16 @@ ggplot(by_gender, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=Gender)) +
   labs(title="Tỉ lệ giới tính tham gia survey")
 
 #Age and Gender ----
-df_3 %>% group_by(Gender, BirthYear) %>%
+df3 %>% group_by(Gender, Age) %>%
   summarise(count=n()) %>%
-  ggplot(aes(fill=Gender, y=count, x=BirthYear)) + 
+  ggplot(aes(fill=Gender, y=count, x=Age)) + 
   geom_bar(position="stack", stat="identity") + 
   labs(title="Phân loại giới tính và năm sinh", x="Năm sinh", y="Số lượng") + 
   theme(plot.title = element_text(hjust=0.5, face="bold")) + coord_flip() +
   scale_fill_manual(values=brand, 
                     name="Giới tính")
+
+# df %>% ggplot(aes(x=RecordedDate)) +
+#   geom_line(aes(y=Age)) +
+#   labs(title="Survey Response Time by Age")
+
