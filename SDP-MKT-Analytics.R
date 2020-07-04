@@ -1,22 +1,25 @@
 #Saigon Dating Project
 #Mai-Huong, Nguyen
 #Date created: 07/01/2020
-#Date last updated: 07/03/2020
+#Date last updated: 07/04/2020
 
 #Opening Tools ----
 library(ggplot2)
 library(dplyr)
 library(tidyr)
 library(lubridate)
+library(forcats)
+library(RColorBrewer)
+library(munsell)
 
 #Setting Working Directory ----
-setwd("~/Downloads/Data as of 7:2 10.20PM")
+setwd("~/Downloads/SGD/[SGD]MP1")
 
 #Importing Data ----
-df <- read.csv('19 SURVEY_July 4, 2020_04.34.csv', 
+df <- read.csv('19 SURVEY_July 4, 2020_11.04.csv', 
                    header = TRUE,
                    na.strings = "") #Code can be used for file with choice texts as well
-df1 <- read.csv('19 SURVEY_July 4, 2020_04.14.csv', 
+df1 <- read.csv('19 SURVEY_July 4, 2020_11.03.csv', 
                header = TRUE,
                na.strings = "")
 df$X2_1 <- df1$X2_1
@@ -69,6 +72,14 @@ df <- df %>% separate(StartDate, c('empty', 'StartDate'), sep="020-") %>%
 #  separate(EndDate, c('empty1', 'EndDate'), sep="020-") %>%
   select(-empty)#, -empty1)
 
+#Recoding Budget Factors ----
+df <- df %>% mutate(Budget = fct_recode(Budget,
+                                        "Dưới 50,000 VNĐ" = '1',
+                                        "50,000 VNĐ - 100,000 VNĐ" = '2',
+                                        "100,000 VNĐ - 150,000 VNĐ" = '3',
+                                        "150,000 VNĐ - 200,000 VNĐ" = '4',
+                                        "Trên 200,000 VNĐ" = '5'))
+
 #Saving Data Frame ----
 write.csv(df, "Data20200702-Ced.csv", row.names = F)
 rownames(df) <- NULL
@@ -116,16 +127,13 @@ df2 %>% ggplot(aes(x=StartHour)) + geom_bar(fill="#4b82a0") +
 # Response Duration ----
 df$Duration <- as.numeric(levels(df$Duration))[df$Duration]
 
-# df %>% filter(df$Duration != 73763) %>% #probably outlier
-#   ggplot(aes(x=as.numeric(as.character(BirthYear)), y=log(Duration))) +
-#   geom_point(color="#4b82a0") +
-#   geom_smooth(method=loess, formula = y~x, level=0.99)
-
 df$Age <- 2021 - as.numeric(as.character(df$BirthYear))
 
 df %>% filter(df$Duration != 73763) %>% #probably outlier
   ggplot(aes(x=Age, y=log(Duration))) +
-  geom_point(color="#4b82a0") #+ geom_smooth(method=loess, formula = y~x, level=0.99)
+  geom_point(color="#4b82a0") + #+ geom_smooth(method=loess, formula = y~x, level=0.99) 
+  labs(title="Mối liên hệ giữa độ tuổi và \nthời gian làm survey", x="Độ tuổi", y="Log của thời gian làm survey") +
+  theme(legend.position = "none", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
 
 cor(df$Age, df$Duration) #no linear relationship
 
@@ -141,8 +149,6 @@ df3_b$Gender <- 3
 df3[c(rownames(df3_b)),] <- df3_b
 df3$Gender <- ifelse(df3$Gender == 1, "Nam", ifelse(df3$Gender == 2, "Nữ", "LGBTQ+"))
 
-#df3$StudyAbroad <- ifelse(df3$StudyAbroad == 1, "Có", "Không")
-
 df3 %>% group_by(Gender, StudyAbroad) %>%
   summarise(count=n()) %>%
   ggplot(aes(fill=StudyAbroad, y=count, x=Gender)) + 
@@ -150,8 +156,10 @@ df3 %>% group_by(Gender, StudyAbroad) %>%
   scale_fill_manual(values=c("#dfc9b1", "#d3a0b7"), 
                     name="Du học sinh?",
                     labels=c("Có", "Không")) +
-  labs(title="Phân loại giới tính và du học sinh", x="Giới tính", y="Số lượng") + 
-  theme(plot.title = element_text(hjust=0.5, face="bold"))
+  labs(title="Phân loại giới tính và trải nghiệm du học", x="Giới tính", y="Số lượng") + 
+  theme(plot.title = element_text(hjust=0.5, face="bold", size=14))
+
+#Gender Composition ----
 
 # Compute percentages
 by_gender <- df3 %>% 
@@ -188,7 +196,7 @@ df3 %>% group_by(Gender, Age) %>%
   ggplot(aes(fill=Gender, y=count, x=Age)) + 
   geom_bar(position="stack", stat="identity") + 
   labs(title="Phân loại giới tính và năm sinh", x="Năm sinh", y="Số lượng") + 
-  theme(plot.title = element_text(hjust=0.5, face="bold")) + coord_flip() +
+  theme(plot.title = element_text(hjust=0.5, face="bold", size=14)) + coord_flip() +
   scale_fill_manual(values=brand, 
                     name="Giới tính")
 
@@ -196,3 +204,37 @@ df3 %>% group_by(Gender, Age) %>%
 #   geom_line(aes(y=Age)) +
 #   labs(title="Survey Response Time by Age")
 
+#Budget ----
+df %>% group_by(Budget) %>%
+  ggplot(aes(x=Budget)) +
+  geom_bar(fill="#4b82a0") + 
+  coord_flip() +
+  labs(title="Phân loại chi phí sẵn sàng chi trả \ncho một buổi hẹn hò", x="Chi phí", y="Số lượng") +
+  theme(plot.title = element_text(hjust=0.5, face="bold", size=14))
+
+df3 %>%  group_by(Gender, Budget) %>%
+  summarise(count=n()) %>%
+  ggplot(aes(fill=Budget, y=count, x=Gender)) +
+  geom_bar(position='dodge', stat='identity') + 
+  scale_fill_brewer(name="Chi phí", palette="PuRd") +
+  labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên giới tính", x='Giới tính', y='Số lượng') +
+  theme(plot.title = element_text(hjust=0.5, face='bold', size=14))
+
+df3 %>%  group_by(StudyAbroad, Budget) %>%
+  summarise(count=n()) %>%
+  ggplot(aes(fill=StudyAbroad, y=count, x=Budget)) +
+  geom_bar(position='dodge', stat='identity') +
+  scale_fill_manual(values=c("#dfc9b1", "#d3a0b7"), 
+                    name="Du học sinh?",
+                    labels=c("Có", "Không")) +
+  coord_flip() +
+  theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) +
+  labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên trải nghiệm du học", x='Chi phí', y='Số lượng')
+
+df3 %>% group_by(Budget) %>%
+  ggplot(aes(x=Budget, y=Age)) + 
+  geom_point(aes(colour = Age)) +
+  scale_colour_gradient(low = "#283e59", high = "#b0d5d0", name="Độ tuổi") +
+  coord_flip() +
+  theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) +
+  labs(title="Phân loại chi phí sẵn sàng chi trả cho \nmột buổi hẹn hò dựa trên độ tuổi", x='Chi phí', y='Số lượng')
