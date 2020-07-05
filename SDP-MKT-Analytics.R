@@ -9,8 +9,10 @@ library(dplyr)
 library(tidyr)
 library(lubridate)
 library(forcats)
+library(tidyverse)
 library(RColorBrewer)
 library(munsell)
+library(plyr)
 
 #Setting Working Directory ----
 setwd("~/Downloads/SGD/[SGD]MP1")
@@ -39,11 +41,12 @@ df$RecordedDate <- ymd_hms(df$RecordedDate, tz="Asia/Bangkok")
 colnames(df) #to identify variables to keep and their names
 df <- df %>% select(StartDate, 
 #                            EndDate,
-                            Duration..in.seconds.,
-                            RecordedDate,
-                            X2_1:X7,
-                            X1.1:X5.1,
-                            X9)
+                    Duration..in.seconds.,
+                    RecordedDate,
+                    X2_1:X10_1,
+                    X12,        
+                    X1.1:X5.1,
+                    X9)
 
 oldnames = colnames(df)
 newnames = c("StartDate", 
@@ -56,6 +59,10 @@ newnames = c("StartDate",
              "Education",
              "EmploymentStatus",
              "StudyAbroad",
+             "StatusImportance",
+             "FinanceImportance",
+             "Commitment",
+             "ChineseZodiac",
              "P2Q1",
              "P2Q2",
              "P2Q3",
@@ -79,6 +86,14 @@ df <- df %>% mutate(Budget = fct_recode(Budget,
                                         "100,000 VNĐ - 150,000 VNĐ" = '3',
                                         "150,000 VNĐ - 200,000 VNĐ" = '4',
                                         "Trên 200,000 VNĐ" = '5'))
+
+df <- df %>% mutate(Education = fct_recode(Education,
+                                          "Đang học cấp 3" = '1',
+                                          "Đã tốt nghiệp cấp 3" = '2',
+                                          "Đang học Đại học" = '3',
+                                          "Đã tốt nghiệp Đại học" = '4',
+                                          "Đang học Cao học" = '5',
+                                          "Đã học xong Cao học" = '6'))
 
 #Saving Data Frame ----
 write.csv(df, "Data20200702-Ced.csv", row.names = F)
@@ -137,7 +152,7 @@ df %>% filter(df$Duration != 73763) %>% #probably outlier
 
 cor(df$Age, df$Duration) #no linear relationship
 
-#Gender and Study Abroad Experience ----
+#Gender and Study Abroad ----
 df3 <- df
 df3 <- separate(df3, PartnerGender, c("PartnerGender1", "PartnerGender2"), sep=",")
 
@@ -195,10 +210,21 @@ df3 %>% group_by(Gender, Age) %>%
   summarise(count=n()) %>%
   ggplot(aes(fill=Gender, y=count, x=Age)) + 
   geom_bar(position="stack", stat="identity") + 
-  labs(title="Phân loại giới tính và năm sinh", x="Năm sinh", y="Số lượng") + 
+  labs(title="Phân loại giới tính và độ tuổi", x="Độ tuổi", y="Số lượng") + 
   theme(plot.title = element_text(hjust=0.5, face="bold", size=14)) + coord_flip() +
   scale_fill_manual(values=brand, 
                     name="Giới tính")
+
+df3 %>%  group_by(Gender, Education) %>%
+  summarise(count=n()) %>%
+  ggplot(aes(fill=Gender, y=count, x=Education)) +
+  #geom_bar(position='dodge', stat='identity') +
+  geom_col(position = position_dodge2(width = 0.9, preserve = "single")) +
+  coord_flip() +
+  scale_fill_manual(values=brand, 
+                    name="Giới tính") +
+  theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) +
+  labs(title="Phân loại trình độ học vấn \ndựa trên giới tính", x='Trình độ học vấn', y='Số lượng')
 
 # df %>% ggplot(aes(x=RecordedDate)) +
 #   geom_line(aes(y=Age)) +
@@ -231,10 +257,67 @@ df3 %>%  group_by(StudyAbroad, Budget) %>%
   theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) +
   labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên trải nghiệm du học", x='Chi phí', y='Số lượng')
 
-df3 %>% group_by(Budget) %>%
-  ggplot(aes(x=Budget, y=Age)) + 
-  geom_point(aes(colour = Age)) +
-  scale_colour_gradient(low = "#283e59", high = "#b0d5d0", name="Độ tuổi") +
+df3 %>%  group_by(Budget, Age) %>%
+  summarise(count=n()) %>%
+  ggplot(aes(fill=Budget, y=count, x=Age)) +
+  scale_fill_brewer(name="Chi phí", palette="PuRd") +
+  geom_bar(position='stack', stat='identity') +
+  theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) +
+  labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên độ tuổi", x='Độ tuổi', y='Số lượng')
+
+df3 %>%  group_by(Budget, Education) %>%
+  summarise(count=n()) %>%
+  ggplot(aes(fill=Budget, y=count, x=Education)) +
+  scale_fill_brewer(name="Chi phí", palette="PuRd") +
+  geom_bar(position='stack', stat='identity') +
   coord_flip() +
   theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) +
-  labs(title="Phân loại chi phí sẵn sàng chi trả cho \nmột buổi hẹn hò dựa trên độ tuổi", x='Chi phí', y='Số lượng')
+  labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên trình độ học vấn", x='Trình độ học vấn', y='Số lượng')
+
+# Importance of Finance and Status ----
+df$FinanceImportance <- as.numeric(levels(df$FinanceImportance))[df$FinanceImportance]
+df$StatusImportance <- as.numeric(levels(df$StatusImportance))[df$StatusImportance]
+
+df %>% ggplot(aes(x=Age, y=FinanceImportance)) +
+  geom_point(color="#4b82a0") +
+  labs(title="Mối liên hệ giữa độ tuổi và tầm quan trọng của \nkhả năng tài chính của đối phương", x="Độ tuổi", y="Tầm quan trọng của \nkhả năng tài chính của đối phương") +
+  theme(legend.position = "none", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
+
+df %>% ggplot(aes(x=Age, y=StatusImportance)) +
+  geom_point(color="#4b82a0") +
+  labs(title="Mối liên hệ giữa độ tuổi và tầm quan trọng của \nnghề nghiệp/học vấn của đối phương", x="Độ tuổi", y="Tầm quan trọng của \nnghề nghiệp/học vấn của đối phương") +
+  theme(legend.position = "none", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
+
+df %>% ggplot(aes(x=FinanceImportance, y=StatusImportance)) +
+  geom_point(color="#4b82a0") + geom_smooth(method=lm, formula = y~x) +
+  labs(title="Mối liên hệ giữa tầm quan trọng của khả năng tài chính và \ntầm quan trọng của nghề nghiệp/học vấn của đối phương", 
+       x="Tầm quan trọng của \nkhả năng tài chính của đối phương", 
+       y="Tầm quan trọng của \nnghề nghiệp/học vấn của đối phương") +
+  theme(legend.position = "none", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
+
+cor(df$StatusImportance, df$FinanceImportance) #There is a strong positive relationship.
+
+#Commitment ----
+df$Commitment <- as.numeric(levels(df$Commitment))[df$Commitment]
+df3$Commitment <- as.numeric(levels(df3$Commitment))[df3$Commitment]
+
+df %>% ggplot(aes(x=Commitment, y=Age)) +
+  geom_point(color="#4b82a0")
+
+cor(df$Age, df$Commitment) #no-weak association
+
+# df3 %>% 
+#   group_by(Gender, Education, Budget) %>%
+#   summarise(count=n()) %>%
+#   ggplot(aes(fill=Budget, y=count, x=Education)) +  
+#   geom_col(position = position_dodge2(width = 0.9, preserve = "single")) +
+#   facet_grid(~Gender, scales = "free_x", space = "free_x") + coord_flip()
+
+gender_mean <- ddply(df3, "Gender", summarise, grp.mean=mean(Commitment))
+
+df3 %>% ggplot(aes(x=Commitment, fill=Gender)) + 
+  geom_density(alpha = 0.6, color=NA) +
+  geom_vline(data=gender_mean, aes(xintercept=grp.mean), color=brand, linetype="dashed") +
+  scale_fill_manual(values=brand, name="Giới tính") +
+  labs(title="Độ sẵn sàng nghiêm túc với \nmột mối quan hệ dựa trên giới tính", x="Độ sẵn sàng", y="Mật độ xác suất") +
+  theme(plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
