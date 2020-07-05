@@ -383,4 +383,4 @@ df5 %>% group_by(Rank, Option) %>%
                              'Có cơ hội để chia sẻ và học hỏi từ người khác, \ntừ đó hiểu hơn về bản thân mình',
                              'Có những hoạt động trải nghiệm \nvui vẻ, năng động, đáng nhớ')) +
   labs(title="Thành phần những hoạt động trong một buổi hẹn hò \ntheo thứ tự ưa thích", x="Thứ tự", y="Phần trăm") +
-  theme(legend.position = "top", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
+  theme(legend.position = "right", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
