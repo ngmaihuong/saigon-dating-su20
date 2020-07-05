@@ -1,7 +1,7 @@
 #Saigon Dating Project
 #Mai-Huong, Nguyen
 #Date created: 07/01/2020
-#Date last updated: 07/04/2020
+#Date last updated: 07/05/2020
 
 #Opening Tools ----
 library(ggplot2)
@@ -46,7 +46,8 @@ df <- df %>% select(StartDate,
                     X2_1:X10_1,
                     X12,        
                     X1.1:X5.1,
-                    X9)
+                    X9,
+                    X11_4:X11_7)
 
 oldnames = colnames(df)
 newnames = c("StartDate", 
@@ -68,7 +69,11 @@ newnames = c("StartDate",
              "P2Q3",
              "P2Q4",
              "P2Q5",
-             "Budget")
+             "Budget",
+             "P2Q11a",
+             "P2Q11b",
+             "P2Q11c",
+             "P2Q11d")
 df <- df %>% rename_at(vars(oldnames), ~ newnames)
 df <- na.omit(df)
 
@@ -105,11 +110,11 @@ brand = c("#d3a0b7", "#dfc9b1", "#4b82a0")
 #Response Date and Time ----
 by_date <- df %>% 
   group_by(StartDate) %>% 
-  count(StartDate) %>% 
+  dplyr::count(StartDate) %>% 
   arrange(desc(StartDate)) %>% 
-  rename('ResponseQuantity'=n)
+  dplyr::rename('ResponseQuantity'=n)
 
-df %>% ggplot(aes(x=StartDate)) + geom_bar(fill="#4b82a0") + 
+df %>% ggplot(aes(x=StartDate)) + geom_bar(fill=brand[3]) + 
   labs(title="Số lượng survey nhận được theo ngày", x="Ngày (mm-dd)",y="Số lượng") + 
   theme(
     plot.title = element_text(hjust=0.5, face="bold"))
@@ -121,21 +126,21 @@ df$StartTime <- hms(df$StartTime)
 df$StartHour <- hour(df$StartTime)
 #df$EndTime <- hour(df$EndTime)
 
-df %>% ggplot(aes(x=StartHour)) + geom_bar(fill="#4b82a0") +  
+df %>% ggplot(aes(x=StartHour)) + geom_bar(fill=brand[3]) +  
   labs(title="Số lượng survey nhận được theo giờ", x="Giờ",y="Số lượng") + 
   theme(plot.title = element_text(hjust=0.5, face="bold"))
 
 #Before the pinned post
 df1 <- df %>% filter(StartDate < "06-30")
 
-df1 %>% ggplot(aes(x=StartHour)) + geom_bar(fill="#4b82a0") +  
+df1 %>% ggplot(aes(x=StartHour)) + geom_bar(fill=brand[3]) +  
   labs(title="Số lượng survey nhận được theo giờ \n(trước khi đăng pinned post)", x="Giờ", y="Số lượng") + 
   theme(plot.title = element_text(hjust=0.5, face="bold"))
 
 #After the pinned post
 df2 <- df %>% filter(StartDate >= "06-30")
 
-df2 %>% ggplot(aes(x=StartHour)) + geom_bar(fill="#4b82a0") +  
+df2 %>% ggplot(aes(x=StartHour)) + geom_bar(fill=brand[3]) +  
   labs(title="Số lượng survey nhận được theo giờ \n(sau khi đăng pinned post)", x="Giờ", y="Số lượng") + 
   theme(plot.title = element_text(hjust=0.5, face="bold"))
 
@@ -146,7 +151,7 @@ df$Age <- 2021 - as.numeric(as.character(df$BirthYear))
 
 df %>% filter(df$Duration != 73763) %>% #probably outlier
   ggplot(aes(x=Age, y=log(Duration))) +
-  geom_point(color="#4b82a0") + #+ geom_smooth(method=loess, formula = y~x, level=0.99) 
+  geom_point(color=brand[3]) + #+ geom_smooth(method=loess, formula = y~x, level=0.99) 
   labs(title="Mối liên hệ giữa độ tuổi và \nthời gian làm survey", x="Độ tuổi", y="Log của thời gian làm survey") +
   theme(legend.position = "none", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
 
@@ -165,10 +170,10 @@ df3[c(rownames(df3_b)),] <- df3_b
 df3$Gender <- ifelse(df3$Gender == 1, "Nam", ifelse(df3$Gender == 2, "Nữ", "LGBTQ+"))
 
 df3 %>% group_by(Gender, StudyAbroad) %>%
-  summarise(count=n()) %>%
+  dplyr::summarise(count=n()) %>%
   ggplot(aes(fill=StudyAbroad, y=count, x=Gender)) + 
   geom_bar(position="stack", stat="identity") + 
-  scale_fill_manual(values=c("#dfc9b1", "#d3a0b7"), 
+  scale_fill_manual(values=c(brand[2], brand[1]), 
                     name="Du học sinh?",
                     labels=c("Có", "Không")) +
   labs(title="Phân loại giới tính và trải nghiệm du học", x="Giới tính", y="Số lượng") + 
@@ -179,9 +184,9 @@ df3 %>% group_by(Gender, StudyAbroad) %>%
 # Compute percentages
 by_gender <- df3 %>% 
   group_by(Gender) %>% 
-  count(Gender) %>% 
+  dplyr::count(Gender) %>% 
   arrange(Gender) %>% 
-  rename('ResponseQuantity'=n)
+  dplyr::rename('ResponseQuantity'=n)
 
 by_gender$fraction <- by_gender$ResponseQuantity / sum(by_gender$ResponseQuantity)
 by_gender$ymax <- cumsum(by_gender$fraction)
@@ -216,7 +221,7 @@ df3 %>% group_by(Gender, Age) %>%
                     name="Giới tính")
 
 df3 %>%  group_by(Gender, Education) %>%
-  summarise(count=n()) %>%
+  dplyr::summarise(count=n()) %>%
   ggplot(aes(fill=Gender, y=count, x=Education)) +
   #geom_bar(position='dodge', stat='identity') +
   geom_col(position = position_dodge2(width = 0.9, preserve = "single")) +
@@ -233,13 +238,13 @@ df3 %>%  group_by(Gender, Education) %>%
 #Budget ----
 df %>% group_by(Budget) %>%
   ggplot(aes(x=Budget)) +
-  geom_bar(fill="#4b82a0") + 
+  geom_bar(fill=brand[3]) + 
   coord_flip() +
   labs(title="Phân loại chi phí sẵn sàng chi trả \ncho một buổi hẹn hò", x="Chi phí", y="Số lượng") +
   theme(plot.title = element_text(hjust=0.5, face="bold", size=14))
 
 df3 %>%  group_by(Gender, Budget) %>%
-  summarise(count=n()) %>%
+  dplyr::summarise(count=n()) %>%
   ggplot(aes(fill=Budget, y=count, x=Gender)) +
   geom_bar(position='dodge', stat='identity') + 
   scale_fill_brewer(name="Chi phí", palette="PuRd") +
@@ -247,10 +252,10 @@ df3 %>%  group_by(Gender, Budget) %>%
   theme(plot.title = element_text(hjust=0.5, face='bold', size=14))
 
 df3 %>%  group_by(StudyAbroad, Budget) %>%
-  summarise(count=n()) %>%
+  dplyr::summarise(count=n()) %>%
   ggplot(aes(fill=StudyAbroad, y=count, x=Budget)) +
   geom_bar(position='dodge', stat='identity') +
-  scale_fill_manual(values=c("#dfc9b1", "#d3a0b7"), 
+  scale_fill_manual(values=c(brand[2], brand[1]), 
                     name="Du học sinh?",
                     labels=c("Có", "Không")) +
   coord_flip() +
@@ -258,7 +263,7 @@ df3 %>%  group_by(StudyAbroad, Budget) %>%
   labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên trải nghiệm du học", x='Chi phí', y='Số lượng')
 
 df3 %>%  group_by(Budget, Age) %>%
-  summarise(count=n()) %>%
+  dplyr::summarise(count=n()) %>%
   ggplot(aes(fill=Budget, y=count, x=Age)) +
   scale_fill_brewer(name="Chi phí", palette="PuRd") +
   geom_bar(position='stack', stat='identity') +
@@ -266,7 +271,7 @@ df3 %>%  group_by(Budget, Age) %>%
   labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên độ tuổi", x='Độ tuổi', y='Số lượng')
 
 df3 %>%  group_by(Budget, Education) %>%
-  summarise(count=n()) %>%
+  dplyr::summarise(count=n()) %>%
   ggplot(aes(fill=Budget, y=count, x=Education)) +
   scale_fill_brewer(name="Chi phí", palette="PuRd") +
   geom_bar(position='stack', stat='identity') +
@@ -279,17 +284,17 @@ df$FinanceImportance <- as.numeric(levels(df$FinanceImportance))[df$FinanceImpor
 df$StatusImportance <- as.numeric(levels(df$StatusImportance))[df$StatusImportance]
 
 df %>% ggplot(aes(x=Age, y=FinanceImportance)) +
-  geom_point(color="#4b82a0") +
+  geom_point(color=brand[3]) +
   labs(title="Mối liên hệ giữa độ tuổi và tầm quan trọng của \nkhả năng tài chính của đối phương", x="Độ tuổi", y="Tầm quan trọng của \nkhả năng tài chính của đối phương") +
   theme(legend.position = "none", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
 
 df %>% ggplot(aes(x=Age, y=StatusImportance)) +
-  geom_point(color="#4b82a0") +
+  geom_point(color=brand[3]) +
   labs(title="Mối liên hệ giữa độ tuổi và tầm quan trọng của \nnghề nghiệp/học vấn của đối phương", x="Độ tuổi", y="Tầm quan trọng của \nnghề nghiệp/học vấn của đối phương") +
   theme(legend.position = "none", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
 
 df %>% ggplot(aes(x=FinanceImportance, y=StatusImportance)) +
-  geom_point(color="#4b82a0") + geom_smooth(method=lm, formula = y~x) +
+  geom_point(color=brand[3]) + geom_smooth(method=lm, formula = y~x) +
   labs(title="Mối liên hệ giữa tầm quan trọng của khả năng tài chính và \ntầm quan trọng của nghề nghiệp/học vấn của đối phương", 
        x="Tầm quan trọng của \nkhả năng tài chính của đối phương", 
        y="Tầm quan trọng của \nnghề nghiệp/học vấn của đối phương") +
@@ -302,16 +307,9 @@ df$Commitment <- as.numeric(levels(df$Commitment))[df$Commitment]
 df3$Commitment <- as.numeric(levels(df3$Commitment))[df3$Commitment]
 
 df %>% ggplot(aes(x=Commitment, y=Age)) +
-  geom_point(color="#4b82a0")
+  geom_point(color=brand[3])
 
 cor(df$Age, df$Commitment) #no-weak association
-
-# df3 %>% 
-#   group_by(Gender, Education, Budget) %>%
-#   summarise(count=n()) %>%
-#   ggplot(aes(fill=Budget, y=count, x=Education)) +  
-#   geom_col(position = position_dodge2(width = 0.9, preserve = "single")) +
-#   facet_grid(~Gender, scales = "free_x", space = "free_x") + coord_flip()
 
 gender_mean <- ddply(df3, "Gender", summarise, grp.mean=mean(Commitment))
 
@@ -321,3 +319,53 @@ df3 %>% ggplot(aes(x=Commitment, fill=Gender)) +
   scale_fill_manual(values=brand, name="Giới tính") +
   labs(title="Độ sẵn sàng nghiêm túc với \nmột mối quan hệ dựa trên giới tính", x="Độ sẵn sàng", y="Mật độ xác suất") +
   theme(plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
+
+#Chinese Zodiac ----
+df3 %>% group_by(Age, ChineseZodiac, Gender) %>%
+  dplyr::summarise(count=n()) %>%
+  ggplot(aes(fill=ChineseZodiac, y=count, x=Age)) + 
+  geom_bar(position="stack", stat="identity") +
+  facet_grid(~Gender, scales = "free_x", space = "free_x") +
+  scale_fill_manual(values=c(brand[1], brand[3]), 
+                    name="Tầm quan trọng của \ntuổi và con giáp",
+                    labels=c("Có", "Không")) +
+  labs(title="Phân loại độ tuổi và \ntầm quan trọng của tuổi và con giáp \ntheo giới tính", x="Độ tuổi", y="Số lượng") + 
+  theme(plot.title = element_text(hjust=0.5, face="bold", size=14))
+
+#Activities Preferences ----
+df4 <- data.frame(df$P2Q11a, df$P2Q11b, df$P2Q11c,df$P2Q11d)
+
+# df %>% group_by(P2Q11a) %>%
+#   ggplot(aes(x=P2Q11a)) +
+#   geom_bar(fill=brand[3]) + 
+#   coord_flip() +
+#   labs(title="Phân loại chi phí sẵn sàng chi trả \ncho một buổi hẹn hò", x="Chi phí", y="Số lượng") +
+#   theme(plot.title = element_text(hjust=0.5, face="bold", size=14))
+
+# full_data %>%
+#   filter(JobLevel != "Open Resume Submission", Source != "Import", Source != "Career Site") %>% 
+#   group_by(Source, JobLevel) %>% 
+#   summarise(count=n()) %>% 
+#   ggplot(aes(x=JobLevel, y=count)) +
+#   labs(title="Fig 4a. Shares of Types of Source among \nCandidates of Each Job Level", 
+#        x="Levels of Job", y="Shares of Types of Source") +
+#   geom_bar(stat="identity", position="fill", color = "white", aes(fill=Source)) + 
+#   coord_flip()
+
+df4_1 <- df4 %>% group_by(df.P2Q11a) %>% dplyr::summarise(count=n())
+df4_2 <- df4 %>% group_by(df.P2Q11b) %>% dplyr::summarise(count=n())
+df4_3 <- df4 %>% group_by(df.P2Q11c) %>% dplyr::summarise(count=n())
+df4_4 <- df4 %>% group_by(df.P2Q11d) %>% dplyr::summarise(count=n())
+
+df4 <- full_join(df4_1, df4_2, by=c("df.P2Q11a"="df.P2Q11b"))
+df4 <- full_join(df4, df4_3, by=c("df.P2Q11a"="df.P2Q11c"))
+df4 <- full_join(df4, df4_4, by=c("df.P2Q11a"="df.P2Q11d"))
+
+df4 <- dplyr::rename(df4,
+                     "Rank"='df.P2Q11a',
+                     'Option1'="count.x",
+                     'Option2'="count.y",
+                     'Option3'="count.x.x",
+                     'Option4'="count.y.y")
+
+df4$row_sum = rowSums(df4[,c(-1)]) #just to check
