@@ -40,7 +40,7 @@ df$RecordedDate <- ymd_hms(df$RecordedDate, tz="Asia/Bangkok")
 #Reframing Data Frame
 colnames(df) #to identify variables to keep and their names
 df <- df %>% select(StartDate, 
-#                            EndDate,
+#                   EndDate,
                     Duration..in.seconds.,
                     RecordedDate,
                     X2_1:X10_1,
@@ -77,14 +77,14 @@ newnames = c("StartDate",
 df <- df %>% rename_at(vars(oldnames), ~ newnames)
 df <- na.omit(df)
 
-#Conditioning Time Variables ----
+#Conditioning Time Variables
 df <- df %>% separate(StartDate, c("StartDate","StartTime"), sep=" ")
 #  separate(EndDate, c("EndDate", "EndTime"), sep=" ")
 df <- df %>% separate(StartDate, c('empty', 'StartDate'), sep="020-") %>%
 #  separate(EndDate, c('empty1', 'EndDate'), sep="020-") %>%
   select(-empty)#, -empty1)
 
-#Recoding Budget Factors ----
+#Recoding Factors
 df <- df %>% mutate(Budget = fct_recode(Budget,
                                         "Dưới 50,000 VNĐ" = '1',
                                         "50,000 VNĐ - 100,000 VNĐ" = '2',
@@ -100,12 +100,26 @@ df <- df %>% mutate(Education = fct_recode(Education,
                                           "Đang học Cao học" = '5',
                                           "Đã học xong Cao học" = '6'))
 
+#Modifying Gender Values
+df$Age <- 2021 - as.numeric(as.character(df$BirthYear))
+df3 <- df
+df3 <- separate(df3, PartnerGender, c("PartnerGender1", "PartnerGender2"), sep=",")
+
+df3_a <- df3[is.na(df3$PartnerGender2), ]
+df3$PartnerGender2[is.na(df3$PartnerGender2)] <- df3_a$PartnerGender1
+
+df3_b <- df3[(df3$Gender == df3$PartnerGender1)|(df3$Gender == df3$PartnerGender2), ]
+df3_b$Gender <- 3
+df3[c(rownames(df3_b)),] <- df3_b
+df3$Gender <- ifelse(df3$Gender == 1, "Nam", ifelse(df3$Gender == 2, "Nữ", "LGBTQ+"))
+
 #Saving Data Frame ----
 write.csv(df, "Data20200702-Ced.csv", row.names = F)
 rownames(df) <- NULL
 
 #Visualization ----
 brand = c("#d3a0b7", "#dfc9b1", "#4b82a0")
+#"#283e59"
 
 #Response Date and Time ----
 by_date <- df %>% 
@@ -123,7 +137,7 @@ df %>% ggplot(aes(x=StartDate)) + geom_bar(fill=brand[3]) +
 df$StartTime <- hms(df$StartTime)
 #df$EndTime <- hms(df$EndTime)
 
-df$StartHour <- hour(df$StartTime)
+df$StartHour <- lubridate::hour(df$StartTime)
 #df$EndTime <- hour(df$EndTime)
 
 df %>% ggplot(aes(x=StartHour)) + geom_bar(fill=brand[3]) +  
@@ -147,8 +161,6 @@ df2 %>% ggplot(aes(x=StartHour)) + geom_bar(fill=brand[3]) +
 # Response Duration ----
 df$Duration <- as.numeric(levels(df$Duration))[df$Duration]
 
-df$Age <- 2021 - as.numeric(as.character(df$BirthYear))
-
 df %>% filter(df$Duration != 73763) %>% #probably outlier
   ggplot(aes(x=Age, y=log(Duration))) +
   geom_point(color=brand[3]) + #+ geom_smooth(method=loess, formula = y~x, level=0.99) 
@@ -156,28 +168,6 @@ df %>% filter(df$Duration != 73763) %>% #probably outlier
   theme(legend.position = "none", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
 
 cor(df$Age, df$Duration) #no linear relationship
-
-#Gender and Study Abroad ----
-df3 <- df
-df3 <- separate(df3, PartnerGender, c("PartnerGender1", "PartnerGender2"), sep=",")
-
-df3_a <- df3[is.na(df3$PartnerGender2), ]
-df3$PartnerGender2[is.na(df3$PartnerGender2)] <- df3_a$PartnerGender1
-
-df3_b <- df3[(df3$Gender == df3$PartnerGender1)|(df3$Gender == df3$PartnerGender2), ]
-df3_b$Gender <- 3
-df3[c(rownames(df3_b)),] <- df3_b
-df3$Gender <- ifelse(df3$Gender == 1, "Nam", ifelse(df3$Gender == 2, "Nữ", "LGBTQ+"))
-
-df3 %>% group_by(Gender, StudyAbroad) %>%
-  dplyr::summarise(count=n()) %>%
-  ggplot(aes(fill=StudyAbroad, y=count, x=Gender)) + 
-  geom_bar(position="stack", stat="identity") + 
-  scale_fill_manual(values=c(brand[2], brand[1]), 
-                    name="Du học sinh?",
-                    labels=c("Có", "Không")) +
-  labs(title="Phân loại giới tính và trải nghiệm du học", x="Giới tính", y="Số lượng") + 
-  theme(plot.title = element_text(hjust=0.5, face="bold", size=14))
 
 #Gender Composition ----
 
@@ -210,9 +200,22 @@ ggplot(by_gender, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=Gender)) +
   theme(legend.position = "none", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=18)) +
   labs(title="Tỉ lệ giới tính tham gia survey")
 
-#Age and Gender ----
+#Gender and Other Variables ----
+
+#Study Abroad
+df3 %>% group_by(Gender, StudyAbroad) %>%
+  dplyr::summarise(count=n()) %>%
+  ggplot(aes(fill=StudyAbroad, y=count, x=Gender)) + 
+  geom_bar(position="stack", stat="identity") + 
+  scale_fill_manual(values=c(brand[2], brand[1]), 
+                    name="Du học sinh?",
+                    labels=c("Có", "Không")) +
+  labs(title="Phân loại giới tính và trải nghiệm du học", x="Giới tính", y="Số lượng") + 
+  theme(plot.title = element_text(hjust=0.5, face="bold", size=14))
+
+#Age
 df3 %>% group_by(Gender, Age) %>%
-  summarise(count=n()) %>%
+  dplyr::summarise(count=n()) %>%
   ggplot(aes(fill=Gender, y=count, x=Age)) + 
   geom_bar(position="stack", stat="identity") + 
   labs(title="Phân loại giới tính và độ tuổi", x="Độ tuổi", y="Số lượng") + 
@@ -220,6 +223,7 @@ df3 %>% group_by(Gender, Age) %>%
   scale_fill_manual(values=brand, 
                     name="Giới tính")
 
+#Education
 df3 %>%  group_by(Gender, Education) %>%
   dplyr::summarise(count=n()) %>%
   ggplot(aes(fill=Gender, y=count, x=Education)) +
@@ -235,7 +239,7 @@ df3 %>%  group_by(Gender, Education) %>%
 #   geom_line(aes(y=Age)) +
 #   labs(title="Survey Response Time by Age")
 
-#Budget ----
+#Budget and Other Variables ----
 df %>% group_by(Budget) %>%
   ggplot(aes(x=Budget)) +
   geom_bar(fill=brand[3]) + 
@@ -243,6 +247,7 @@ df %>% group_by(Budget) %>%
   labs(title="Phân loại chi phí sẵn sàng chi trả \ncho một buổi hẹn hò", x="Chi phí", y="Số lượng") +
   theme(plot.title = element_text(hjust=0.5, face="bold", size=14))
 
+#Gender
 df3 %>%  group_by(Gender, Budget) %>%
   dplyr::summarise(count=n()) %>%
   ggplot(aes(fill=Budget, y=count, x=Gender)) +
@@ -251,6 +256,7 @@ df3 %>%  group_by(Gender, Budget) %>%
   labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên giới tính", x='Giới tính', y='Số lượng') +
   theme(plot.title = element_text(hjust=0.5, face='bold', size=14))
 
+#Study Abroad
 df3 %>%  group_by(StudyAbroad, Budget) %>%
   dplyr::summarise(count=n()) %>%
   ggplot(aes(fill=StudyAbroad, y=count, x=Budget)) +
@@ -262,6 +268,7 @@ df3 %>%  group_by(StudyAbroad, Budget) %>%
   theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) +
   labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên trải nghiệm du học", x='Chi phí', y='Số lượng')
 
+#Age
 df3 %>%  group_by(Budget, Age) %>%
   dplyr::summarise(count=n()) %>%
   ggplot(aes(fill=Budget, y=count, x=Age)) +
@@ -270,6 +277,7 @@ df3 %>%  group_by(Budget, Age) %>%
   theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) +
   labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên độ tuổi", x='Độ tuổi', y='Số lượng')
 
+#Education
 df3 %>%  group_by(Budget, Education) %>%
   dplyr::summarise(count=n()) %>%
   ggplot(aes(fill=Budget, y=count, x=Education)) +
@@ -283,6 +291,7 @@ df3 %>%  group_by(Budget, Education) %>%
 df$FinanceImportance <- as.numeric(levels(df$FinanceImportance))[df$FinanceImportance]
 df$StatusImportance <- as.numeric(levels(df$StatusImportance))[df$StatusImportance]
 
+#Age
 df %>% ggplot(aes(x=Age, y=FinanceImportance)) +
   geom_point(color=brand[3]) +
   labs(title="Mối liên hệ giữa độ tuổi và tầm quan trọng của \nkhả năng tài chính của đối phương", x="Độ tuổi", y="Tầm quan trọng của \nkhả năng tài chính của đối phương") +
@@ -293,6 +302,7 @@ df %>% ggplot(aes(x=Age, y=StatusImportance)) +
   labs(title="Mối liên hệ giữa độ tuổi và tầm quan trọng của \nnghề nghiệp/học vấn của đối phương", x="Độ tuổi", y="Tầm quan trọng của \nnghề nghiệp/học vấn của đối phương") +
   theme(legend.position = "none", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
 
+#Finance v. Status
 df %>% ggplot(aes(x=FinanceImportance, y=StatusImportance)) +
   geom_point(color=brand[3]) + geom_smooth(method=lm, formula = y~x) +
   labs(title="Mối liên hệ giữa tầm quan trọng của khả năng tài chính và \ntầm quan trọng của nghề nghiệp/học vấn của đối phương", 
@@ -335,23 +345,6 @@ df3 %>% group_by(Age, ChineseZodiac, Gender) %>%
 #Activities Preferences ----
 df4 <- data.frame(df$P2Q11a, df$P2Q11b, df$P2Q11c,df$P2Q11d)
 
-# df %>% group_by(P2Q11a) %>%
-#   ggplot(aes(x=P2Q11a)) +
-#   geom_bar(fill=brand[3]) + 
-#   coord_flip() +
-#   labs(title="Phân loại chi phí sẵn sàng chi trả \ncho một buổi hẹn hò", x="Chi phí", y="Số lượng") +
-#   theme(plot.title = element_text(hjust=0.5, face="bold", size=14))
-
-# full_data %>%
-#   filter(JobLevel != "Open Resume Submission", Source != "Import", Source != "Career Site") %>% 
-#   group_by(Source, JobLevel) %>% 
-#   summarise(count=n()) %>% 
-#   ggplot(aes(x=JobLevel, y=count)) +
-#   labs(title="Fig 4a. Shares of Types of Source among \nCandidates of Each Job Level", 
-#        x="Levels of Job", y="Shares of Types of Source") +
-#   geom_bar(stat="identity", position="fill", color = "white", aes(fill=Source)) + 
-#   coord_flip()
-
 df4_1 <- df4 %>% group_by(df.P2Q11a) %>% dplyr::summarise(count=n())
 df4_2 <- df4 %>% group_by(df.P2Q11b) %>% dplyr::summarise(count=n())
 df4_3 <- df4 %>% group_by(df.P2Q11c) %>% dplyr::summarise(count=n())
@@ -369,3 +362,25 @@ df4 <- dplyr::rename(df4,
                      'Option4'="count.y.y")
 
 df4$row_sum = rowSums(df4[,c(-1)]) #just to check
+
+df5 <- data.frame(df$P2Q11a, df$P2Q11b, df$P2Q11c,df$P2Q11d)
+
+df5 <- df5 %>% 
+  dplyr::rename('Option1' = 'df.P2Q11a',
+         'Option2' = 'df.P2Q11b',
+         'Option3' = 'df.P2Q11c',
+         'Option4' = 'df.P2Q11d') %>%
+  gather(Option, Rank, Option1:Option4)
+
+df5 %>% group_by(Rank, Option) %>%
+  dplyr::summarise(count=n()) %>%
+  ggplot(aes(x=Rank, y=count)) +
+  geom_bar(stat='identity', position='fill', aes(fill=Option)) +
+  scale_fill_manual(values=c(brand, '#283e59'), 
+                    name='Hoạt động',
+                    labels=c('Có nhiều thời gian tìm hiểu \nđối phương mà mình được match',
+                             'Có thời gian và cơ hội để giao lưu, \ngặp gỡ với tất cả mọi người tham dự',
+                             'Có cơ hội để chia sẻ và học hỏi từ người khác, \ntừ đó hiểu hơn về bản thân mình',
+                             'Có những hoạt động trải nghiệm \nvui vẻ, năng động, đáng nhớ')) +
+  labs(title="Thành phần những hoạt động trong một buổi hẹn hò \ntheo thứ tự ưa thích", x="Thứ tự", y="Phần trăm") +
+  theme(legend.position = "top", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
