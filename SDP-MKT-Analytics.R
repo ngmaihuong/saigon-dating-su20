@@ -10,6 +10,7 @@ library(tidyr)
 library(lubridate)
 library(forcats)
 library(tidyverse)
+library(scales)
 library(RColorBrewer)
 library(munsell)
 library(plyr)
@@ -31,6 +32,7 @@ df <- df[-c(1,2), ]
 rownames(df) <- NULL
 
 #Transforming Data Frame ----
+options(scipen=5)
 
 #Adjusting time settings (not necessary)
 df$StartDate <- ymd_hms(df$StartDate, tz="Asia/Bangkok")
@@ -159,15 +161,31 @@ df2 %>% ggplot(aes(x=StartHour)) + geom_bar(fill=brand[3]) +
   theme(plot.title = element_text(hjust=0.5, face="bold"))
 
 # Response Duration ----
+
 df$Duration <- as.numeric(levels(df$Duration))[df$Duration]
 
-df %>% filter(df$Duration != 73763) %>% #probably outlier
-  ggplot(aes(x=Age, y=log(Duration))) +
-  geom_point(color=brand[3]) + #+ geom_smooth(method=loess, formula = y~x, level=0.99) 
-  labs(title="Mối liên hệ giữa độ tuổi và \nthời gian làm survey", x="Độ tuổi", y="Log của thời gian làm survey") +
-  theme(legend.position = "none", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
-
+#Overview
 cor(df$Age, df$Duration) #no linear relationship
+boxplot(log(df$Duration)) #outliers spotting
+
+#Finding outliers
+
+Q <- quantile(df$Duration, probs=c(.25, .75), na.rm = FALSE)
+iqr <- IQR(df$Duration)
+up <-  Q[2]+1.5*iqr # Upper Range  
+low <- Q[1]-1.5*iqr # Lower Range
+
+#Eliminating outliers
+df_1 <- subset(df, df$Duration > (Q[1] - 1.5*iqr) & df$Duration < (Q[2]+1.5*iqr))
+
+#Plotting
+cor(df_1$Age, df_1$Duration) #after eliminating outliers
+
+df_1 %>%
+  ggplot(aes(x=Age, y=Duration)) +
+  geom_point(color=brand[3]) + #+ geom_smooth(method=loess, formula = y~x, level=0.99) 
+  labs(title="Mối liên hệ giữa độ tuổi và \nthời gian làm survey", x="Độ tuổi", y="Thời gian làm survey (theo giây)") +
+  theme(legend.position = "none", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
 
 #Gender Composition ----
 
@@ -241,32 +259,55 @@ df3 %>%  group_by(Gender, Education) %>%
 
 #Budget and Other Variables ----
 df %>% group_by(Budget) %>%
-  ggplot(aes(x=Budget)) +
-  geom_bar(fill=brand[3]) + 
+  ggplot(aes(fill = Budget, x=Budget)) +
+  geom_bar() + 
+  scale_fill_brewer(name="Chi phí", palette="PuRd") +
   coord_flip() +
   labs(title="Phân loại chi phí sẵn sàng chi trả \ncho một buổi hẹn hò", x="Chi phí", y="Số lượng") +
   theme(plot.title = element_text(hjust=0.5, face="bold", size=14))
 
 #Gender
+
+# df3 %>%  group_by(Gender, Budget) %>%
+#   dplyr::summarise(count=n()) %>%
+#   ggplot(aes(fill=Budget, y=count, x=Gender)) +
+#   geom_bar(position='stack', stat='identity') + 
+#   scale_fill_brewer(name="Chi phí", palette="PuRd") +
+#   labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên giới tính", x='Giới tính', y='Số lượng') +
+#   theme(plot.title = element_text(hjust=0.5, face='bold', size=14))
+
 df3 %>%  group_by(Gender, Budget) %>%
   dplyr::summarise(count=n()) %>%
-  ggplot(aes(fill=Budget, y=count, x=Gender)) +
-  geom_bar(position='dodge', stat='identity') + 
+  ggplot(aes(y=count, x=Gender)) +
+  geom_bar(position='fill', stat='identity', aes(fill=Budget)) + 
   scale_fill_brewer(name="Chi phí", palette="PuRd") +
-  labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên giới tính", x='Giới tính', y='Số lượng') +
-  theme(plot.title = element_text(hjust=0.5, face='bold', size=14))
+  labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên giới tính", x='Giới tính', y='Tỷ lệ phần trăm') +
+  theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) + coord_flip()
 
 #Study Abroad
-df3 %>%  group_by(StudyAbroad, Budget) %>%
+
+# df3 %>%  group_by(StudyAbroad, Budget) %>%
+#   dplyr::summarise(count=n()) %>%
+#   ggplot(aes(fill=StudyAbroad, y=count, x=Budget)) +
+#   geom_bar(position='dodge', stat='identity') +
+#   scale_fill_manual(values=c(brand[2], brand[1]), 
+#                     name="Du học sinh?",
+#                     labels=c("Có", "Không")) +
+#   coord_flip() +
+#   theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) +
+#   labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên trải nghiệm du học", x='Chi phí', y='Số lượng')
+
+df3 %>% mutate(StudyAbroad = fct_recode(StudyAbroad,
+                                      "Có" = '1',
+                                      "Không" = '2')) %>%
+  group_by(StudyAbroad, Budget) %>%
   dplyr::summarise(count=n()) %>%
-  ggplot(aes(fill=StudyAbroad, y=count, x=Budget)) +
+  ggplot(aes(fill=Budget, y=count, x=StudyAbroad)) +
   geom_bar(position='dodge', stat='identity') +
-  scale_fill_manual(values=c(brand[2], brand[1]), 
-                    name="Du học sinh?",
-                    labels=c("Có", "Không")) +
+  scale_fill_brewer(name="Chi phí", palette="PuRd") +
   coord_flip() +
   theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) +
-  labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên trải nghiệm du học", x='Chi phí', y='Số lượng')
+  labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên trải nghiệm du học", x='Du học sinh', y='Số lượng')
 
 #Age
 df3 %>%  group_by(Budget, Age) %>%
@@ -341,6 +382,17 @@ df3 %>% group_by(Age, ChineseZodiac, Gender) %>%
                     labels=c("Có", "Không")) +
   labs(title="Phân loại độ tuổi và \ntầm quan trọng của tuổi và con giáp \ntheo giới tính", x="Độ tuổi", y="Số lượng") + 
   theme(plot.title = element_text(hjust=0.5, face="bold", size=14))
+
+df3 %>%  group_by(ChineseZodiac, StudyAbroad) %>%
+  dplyr::summarise(count=n()) %>%
+  ggplot(aes(fill=StudyAbroad, y=count, x=ChineseZodiac)) +
+  geom_bar(position='dodge', stat='identity') +
+  scale_fill_manual(values=c(brand[2], brand[1]), 
+                    name="Du học sinh?",
+                    labels=c("Có", "Không")) +
+  #coord_flip() +
+  theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) +
+  labs(title="Phân loại tầm quan trọng của tuổi và con giáp \ndựa trên trải nghiệm du học", x='Tầm quan trọng của tuổi và con giáp', y='Số lượng')
 
 #Activities Preferences ----
 df4 <- data.frame(df$P2Q11a, df$P2Q11b, df$P2Q11c,df$P2Q11d)
