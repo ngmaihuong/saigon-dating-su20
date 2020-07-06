@@ -281,6 +281,7 @@ df3 %>%  group_by(Gender, Budget) %>%
   ggplot(aes(y=count, x=Gender)) +
   geom_bar(position='fill', stat='identity', aes(fill=Budget)) + 
   scale_fill_brewer(name="Chi phí", palette="PuRd") +
+  scale_y_continuous(labels = scales::percent) +
   labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên giới tính", x='Giới tính', y='Tỷ lệ phần trăm') +
   theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) + coord_flip()
 
@@ -446,5 +447,6 @@ df5 %>% group_by(Rank, Option) %>%
                              'Có thời gian và cơ hội để giao lưu, \ngặp gỡ với tất cả mọi người tham dự',
                              'Có cơ hội để chia sẻ và học hỏi từ người khác, \ntừ đó hiểu hơn về bản thân mình',
                              'Có những hoạt động trải nghiệm \nvui vẻ, năng động, đáng nhớ')) +
+  scale_y_continuous(labels = scales::percent) +
   labs(title="Thành phần những hoạt động trong một buổi hẹn hò \ntheo thứ tự ưa thích", x="Thứ tự", y="Phần trăm") +
   theme(legend.position = "right", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
