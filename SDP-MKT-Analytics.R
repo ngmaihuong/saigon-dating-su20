@@ -1,7 +1,7 @@
 #Saigon Dating Project
 #Mai-Huong, Nguyen
 #Date created: 07/01/2020
-#Date last updated: 07/05/2020
+#Date last updated: 07/06/2020
 
 #Opening Tools ----
 library(ggplot2)
@@ -450,3 +450,40 @@ df5 %>% group_by(Rank, Option) %>%
   scale_y_continuous(labels = scales::percent) +
   labs(title="Thành phần những hoạt động trong một buổi hẹn hò \ntheo thứ tự ưa thích", x="Thứ tự", y="Phần trăm") +
   theme(legend.position = "right", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
+
+# Word Clouds ----
+
+# df <- df %>% select(StartDate, 
+#                     #                   EndDate,
+#                     Duration..in.seconds.,
+#                     RecordedDate,
+#                     X2_1:X10_1,
+#                     X12,        
+#                     X7.1:X8_6_TEXT,
+#                     X9,
+#                     X11_4:X11_7)
+# 
+# oldnames = colnames(df)
+# newnames = c("StartDate", 
+#              #             "EndDate", 
+#              "Duration", 
+#              "RecordedDate", 
+#              "BirthYear",
+#              "Gender",
+#              "PartnerGender",
+#              "Education",
+#              "EmploymentStatus",
+#              "StudyAbroad",
+#              "StatusImportance",
+#              "FinanceImportance",
+#              "Commitment",
+#              "ChineseZodiac",
+#              "Challenge",
+#              "Challenge_Other",
+#              "Concern",
+#              "Concern_Other",
+#              "Budget",
+#              "P2Q11a",
+#              "P2Q11b",
+#              "P2Q11c",
+#              "P2Q11d")
