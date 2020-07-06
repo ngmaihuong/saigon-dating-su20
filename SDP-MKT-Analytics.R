@@ -309,6 +309,15 @@ df3 %>% mutate(StudyAbroad = fct_recode(StudyAbroad,
   theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) +
   labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên trải nghiệm du học", x='Du học sinh', y='Số lượng')
 
+df3 %>% 
+  group_by(StudyAbroad, Budget) %>%
+  dplyr::summarise(count=n()) %>%
+  ggplot(aes(y=count, x=StudyAbroad)) +
+  geom_bar(position='fill', stat='identity', aes(fill=Budget)) + 
+  scale_fill_brewer(name="Chi phí", palette="PuRd") +
+  labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên giới tính", x='Giới tính', y='Tỷ lệ phần trăm') +
+  theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) + coord_flip()
+
 #Age
 df3 %>%  group_by(Budget, Age) %>%
   dplyr::summarise(count=n()) %>%
@@ -383,16 +392,19 @@ df3 %>% group_by(Age, ChineseZodiac, Gender) %>%
   labs(title="Phân loại độ tuổi và \ntầm quan trọng của tuổi và con giáp \ntheo giới tính", x="Độ tuổi", y="Số lượng") + 
   theme(plot.title = element_text(hjust=0.5, face="bold", size=14))
 
-df3 %>%  group_by(ChineseZodiac, StudyAbroad) %>%
+df3 %>% mutate(StudyAbroad = fct_recode(StudyAbroad,
+                                        "Có" = '1',
+                                        "Không" = '2')) %>%
+  group_by(ChineseZodiac, StudyAbroad) %>%
   dplyr::summarise(count=n()) %>%
-  ggplot(aes(fill=StudyAbroad, y=count, x=ChineseZodiac)) +
+  ggplot(aes(fill=ChineseZodiac, y=count, x=StudyAbroad)) +
   geom_bar(position='dodge', stat='identity') +
-  scale_fill_manual(values=c(brand[2], brand[1]), 
-                    name="Du học sinh?",
+  scale_fill_manual(values=c(brand[1], brand[3]), 
+                    name="Tầm quan trọng của \ntuổi và con giáp",
                     labels=c("Có", "Không")) +
   #coord_flip() +
   theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) +
-  labs(title="Phân loại tầm quan trọng của tuổi và con giáp \ndựa trên trải nghiệm du học", x='Tầm quan trọng của tuổi và con giáp', y='Số lượng')
+  labs(title="Phân loại tầm quan trọng của tuổi và con giáp \ndựa trên trải nghiệm du học", x='Du học sinh', y='Số lượng')
 
 #Activities Preferences ----
 df4 <- data.frame(df$P2Q11a, df$P2Q11b, df$P2Q11c,df$P2Q11d)
