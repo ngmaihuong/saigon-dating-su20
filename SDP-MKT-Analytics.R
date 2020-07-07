@@ -1,7 +1,7 @@
 #Saigon Dating Project
 #Mai-Huong, Nguyen
 #Date created: 07/01/2020
-#Date last updated: 07/06/2020
+#Date last updated: 07/07/2020
 
 #Opening Tools ----
 library(ggplot2)
@@ -12,6 +12,7 @@ library(forcats)
 library(tidyverse)
 library(scales)
 library(RColorBrewer)
+library(inlmisc)
 library(munsell)
 library(plyr)
 
@@ -453,37 +454,115 @@ df5 %>% group_by(Rank, Option) %>%
 
 # Word Clouds ----
 
-# df <- df %>% select(StartDate, 
-#                     #                   EndDate,
-#                     Duration..in.seconds.,
-#                     RecordedDate,
-#                     X2_1:X10_1,
-#                     X12,        
-#                     X7.1:X8_6_TEXT,
-#                     X9,
-#                     X11_4:X11_7)
-# 
-# oldnames = colnames(df)
-# newnames = c("StartDate", 
-#              #             "EndDate", 
-#              "Duration", 
-#              "RecordedDate", 
-#              "BirthYear",
-#              "Gender",
-#              "PartnerGender",
-#              "Education",
-#              "EmploymentStatus",
-#              "StudyAbroad",
-#              "StatusImportance",
-#              "FinanceImportance",
-#              "Commitment",
-#              "ChineseZodiac",
-#              "Challenge",
-#              "Challenge_Other",
-#              "Concern",
-#              "Concern_Other",
-#              "Budget",
-#              "P2Q11a",
-#              "P2Q11b",
-#              "P2Q11c",
-#              "P2Q11d")
+#Data Frame Conditioning
+df6 <- read.csv('19 SURVEY_July 4, 2020_11.04.csv', 
+                header = TRUE,
+                na.strings = "")
+
+df6 <- df6[-c(1,2), ]
+
+df6 <- df6 %>% select(X3:X4,
+                      X7.1:X8_6_TEXT)
+
+oldnames = colnames(df6)
+newnames = c("Gender",
+             "PartnerGender",
+             "Challenge",
+             "Challenge_Other",
+             "Concern",
+             "Concern_Other")
+df6 <- df6 %>% rename_at(vars(oldnames), ~ newnames)
+
+completeFun <- function(data, desiredCols) {
+  completeVec <- complete.cases(data[, desiredCols])
+  return(data[completeVec, ])
+}
+
+df6 <- completeFun(df6, c("Gender", "Challenge", "Concern"))
+
+#Change to Adjusted Gender Variable
+df6$Gender <- df3$Gender
+
+#Reframing Data Frame
+df6 <- df6 %>% separate(Challenge, c("Challenge1", "Challenge2", "Challenge3", "Challenge4"), sep=c(",")) %>%
+  separate(Concern, c("Concern1", "Concern2", "Concern3", "Concern4"), sep=c(","))
+
+df6_1 <- data.frame(df6$Gender, df6$Challenge1)
+df6_2 <- data.frame(df6$Gender, df6$Challenge2)
+df6_3 <- data.frame(df6$Gender, df6$Challenge3)
+df6_4 <- data.frame(df6$Gender, df6$Challenge4)
+df6_5 <- data.frame(df6$Gender, df6$Concern1)
+df6_6 <- data.frame(df6$Gender, df6$Concern2)
+df6_7 <- data.frame(df6$Gender, df6$Concern3)
+df6_8 <- data.frame(df6$Gender, df6$Concern4)
+
+df6_1 <- df6_1 %>% 
+  dplyr::rename("Challenge"="df6.Challenge1") %>%
+  na.omit()
+df6_2 <- df6_2 %>% 
+  dplyr::rename("Challenge"="df6.Challenge2") %>%
+  na.omit()
+df6_3 <- df6_3 %>% 
+  dplyr::rename("Challenge"="df6.Challenge3") %>%
+  na.omit()
+df6_4 <- df6_4 %>% 
+  dplyr::rename("Challenge"="df6.Challenge4") %>%
+  na.omit()
+df6_5 <- df6_5 %>% 
+  dplyr::rename("Concern"="df6.Concern1") %>%
+  na.omit()
+df6_6 <- df6_6 %>% 
+  dplyr::rename("Concern"="df6.Concern2") %>%
+  na.omit()
+df6_7 <- df6_7 %>% 
+  dplyr::rename("Concern"="df6.Concern3") %>%
+  na.omit()
+df6_8 <- df6_8 %>% 
+  dplyr::rename("Concern"="df6.Concern4") %>%
+  na.omit()
+
+df6_challenge <- rbind(df6_1, df6_2, df6_3, df6_4)
+df6_challenge <- df6_challenge[df6_challenge$Challenge != 6,]
+
+df6_concern <- rbind(df6_5, df6_6, df6_7, df6_8)
+df6_concern <- df6_concern[df6_concern$Concern != 6,]
+
+rm(df6_1, df6_2, df6_3, df6_4, df6_5, df6_6, df6_7, df6_8)
+
+#Recoding Factors
+
+df6_challenge <- df6_challenge %>% mutate(Challenge = fct_recode(Challenge,
+                                          "Quá bận rộn, không có thời gian và \nnăng lượng tìm kiếm đối tượng hẹn hò" = '1',
+                                          "Chưa hiểu bản thân muốn và cần gì" = '2',
+                                          "Hai người không có chung định hướng, \nlý tưởng và hệ giá trị" = '3',
+                                          "Cảm thấy không tin tưởng và \nbất an với những người xung quanh" = '4',
+                                          "Hấp tấp, vội vã chọn sai người" = '5'))
+
+df6_concern <- df6_concern %>% mutate(Concern = fct_recode(Concern,
+                                          "Không cảm thấy rung động" = '1',
+                                          "Không biết nên chia tiền \nnhư thế nào" = '2',
+                                          "Đối phương không chủ động \nsắp xếp buổi hẹn hò (địa điểm, lịch trình, v.v...)" = '3',
+                                          "Đối phương không biết cách \ndẫn dắt câu chuyện, để mình nói quá nhiều" = '4',
+                                          "Đối phương hút thuốc, \nuống rượu bia" = '5'))
+
+#Graphing
+
+df6_challenge %>% group_by(df6.Gender, Challenge) %>%
+  dplyr::summarise(count=n()) %>%
+  ggplot(aes(x=df6.Gender, y=count)) +
+  geom_bar(stat='identity', position='fill', aes(fill=Challenge)) +
+  scale_fill_manual(values = as.character(inlmisc::GetColors(n=5,  scheme = "light")), name="Khó khăn") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title="Tỷ lệ những khó khăn khi tìm kiếm \nđối tượng hẹn hò theo giới tính", x="Giới tính", y="Phần trăm") +
+  theme(legend.position = "right", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
+
+df6_concern %>% group_by(df6.Gender, Concern) %>%
+  dplyr::summarise(count=n()) %>%
+  ggplot(aes(x=df6.Gender, y=count)) +
+  geom_bar(stat='identity', position='fill', aes(fill=Concern)) +
+  #scale_fill_manual(values = wes_palette("Royal2", n = 5), name="Bận tâm") +
+  #scale_fill_brewer(palette = "Set3", name="Bận tâm") +
+  scale_fill_manual(values = as.character(inlmisc::GetColors(n=5,  scheme = "light")), name="Bận tâm") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title="Tỷ lệ những điều khiến cho buổi hẹn hò đầu tiên \ntrở nên không thoải mái theo giới tính", x="Giới tính", y="Phần trăm") +
+  theme(legend.position = "right", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
