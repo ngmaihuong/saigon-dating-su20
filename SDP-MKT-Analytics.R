@@ -15,6 +15,7 @@ library(RColorBrewer)
 library(inlmisc)
 library(munsell)
 library(plyr)
+library(writexl)
 
 #Setting Working Directory ----
 setwd("~/Downloads/SGD/[SGD]MP1")
@@ -123,6 +124,7 @@ rownames(df) <- NULL
 #Visualization ----
 brand = c("#d3a0b7", "#dfc9b1", "#4b82a0")
 #"#283e59"
+#'#ee1b51'
 
 #Response Date and Time ----
 by_date <- df %>% 
@@ -452,7 +454,7 @@ df5 %>% group_by(Rank, Option) %>%
   labs(title="Thành phần những hoạt động trong một buổi hẹn hò \ntheo thứ tự ưa thích", x="Thứ tự", y="Phần trăm") +
   theme(legend.position = "right", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
 
-# Word Clouds ----
+# Challenges and Concerns ----
 
 #Data Frame Conditioning
 df6 <- read.csv('19 SURVEY_July 4, 2020_11.04.csv', 
@@ -522,28 +524,30 @@ df6_8 <- df6_8 %>%
   na.omit()
 
 df6_challenge <- rbind(df6_1, df6_2, df6_3, df6_4)
-df6_challenge <- df6_challenge[df6_challenge$Challenge != 6,]
+#df6_challenge <- df6_challenge[df6_challenge$Challenge != 6,]
 
 df6_concern <- rbind(df6_5, df6_6, df6_7, df6_8)
-df6_concern <- df6_concern[df6_concern$Concern != 6,]
+#df6_concern <- df6_concern[df6_concern$Concern != 6,]
 
 rm(df6_1, df6_2, df6_3, df6_4, df6_5, df6_6, df6_7, df6_8)
 
 #Recoding Factors
 
 df6_challenge <- df6_challenge %>% mutate(Challenge = fct_recode(Challenge,
-                                          "Quá bận rộn, không có thời gian và \nnăng lượng tìm kiếm đối tượng hẹn hò" = '1',
+                                          "Thiếu thời gian và năng lượng để hẹn hò" = '1',
                                           "Chưa hiểu bản thân muốn và cần gì" = '2',
-                                          "Hai người không có chung định hướng, \nlý tưởng và hệ giá trị" = '3',
-                                          "Cảm thấy không tin tưởng và \nbất an với những người xung quanh" = '4',
-                                          "Hấp tấp, vội vã chọn sai người" = '5'))
+                                          "Khác định hướng, lý tưởng và hệ giá trị" = '3',
+                                          "Không tin tưởng và bất an với những người xung quanh" = '4',
+                                          "Hấp tấp, vội vã chọn sai người" = '5',
+                                          "Khác" = '6'))
 
 df6_concern <- df6_concern %>% mutate(Concern = fct_recode(Concern,
                                           "Không cảm thấy rung động" = '1',
                                           "Không biết nên chia tiền \nnhư thế nào" = '2',
                                           "Đối phương không chủ động \nsắp xếp buổi hẹn hò (địa điểm, lịch trình, v.v...)" = '3',
                                           "Đối phương không biết cách \ndẫn dắt câu chuyện, để mình nói quá nhiều" = '4',
-                                          "Đối phương hút thuốc, \nuống rượu bia" = '5'))
+                                          "Đối phương hút thuốc, \nuống rượu bia" = '5',
+                                          "Khác" = '6'))
 
 #Graphing
 
@@ -551,10 +555,33 @@ df6_challenge %>% group_by(df6.Gender, Challenge) %>%
   dplyr::summarise(count=n()) %>%
   ggplot(aes(x=df6.Gender, y=count)) +
   geom_bar(stat='identity', position='fill', aes(fill=Challenge)) +
-  scale_fill_manual(values = as.character(inlmisc::GetColors(n=5,  scheme = "light")), name="Khó khăn") +
+  scale_fill_manual(values=c('#4b82a0', '#6fc0ab', "#b0d5d0", '#ffdee5', '#e2b1cd', '#fee8d8'), name="Khó khăn") +
   scale_y_continuous(labels = scales::percent) +
   labs(title="Tỷ lệ những khó khăn khi tìm kiếm \nđối tượng hẹn hò theo giới tính", x="Giới tính", y="Phần trăm") +
-  theme(legend.position = "right", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
+  theme(legend.position = "right", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14)) +
+  theme(legend.key = element_rect(color = NA, fill = NA),
+        legend.key.size = unit(0.75, "cm"))
+
+# function to increase vertical spacing between legend keys
+# @clauswilke
+draw_key_polygon3 <- function(data, params, size) {
+  lwd <- min(data$size, min(size) / 4)
+  
+  grid::rectGrob(
+    width = grid::unit(0.6, "npc"),
+    height = grid::unit(0.6, "npc"),
+    gp = grid::gpar(
+      col = data$colour,
+      fill = alpha(data$fill, data$alpha),
+      lty = data$linetype,
+      lwd = lwd * .pt,
+      linejoin = "mitre"
+    ))
+}
+
+# register new key drawing function, 
+# the effect is global & persistent throughout the R session
+GeomBar$draw_key = draw_key_polygon3
 
 df6_concern %>% group_by(df6.Gender, Concern) %>%
   dplyr::summarise(count=n()) %>%
@@ -562,7 +589,31 @@ df6_concern %>% group_by(df6.Gender, Concern) %>%
   geom_bar(stat='identity', position='fill', aes(fill=Concern)) +
   #scale_fill_manual(values = wes_palette("Royal2", n = 5), name="Bận tâm") +
   #scale_fill_brewer(palette = "Set3", name="Bận tâm") +
-  scale_fill_manual(values = as.character(inlmisc::GetColors(n=5,  scheme = "light")), name="Bận tâm") +
+  scale_fill_manual(values=c('#4b82a0', '#6fc0ab', "#b0d5d0", '#ffdee5', '#e2b1cd', '#fee8d8'), name="Bận tâm") +
   scale_y_continuous(labels = scales::percent) +
   labs(title="Tỷ lệ những điều khiến cho buổi hẹn hò đầu tiên \ntrở nên không thoải mái theo giới tính", x="Giới tính", y="Phần trăm") +
-  theme(legend.position = "right", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
+  theme(legend.position = "right",
+        plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14)) +
+  theme(legend.key = element_rect(color = NA, fill = NA),
+        legend.key.size = unit(1, "cm"))
+
+# Free Answer Insights ----
+df6_other_1 <- data.frame(df6$Challenge_Other)
+df6_other_1 <- df6_other_1 %>% 
+  na.omit() %>%
+  dplyr::mutate(ID = row_number()) %>%
+  dplyr::rename("Khó khăn" = "df6.Challenge_Other")
+
+df6_other_2 <- data.frame(df6$Concern_Other)
+df6_other_2 <- df6_other_2 %>% 
+  na.omit() %>% 
+  dplyr::mutate(ID = row_number()) %>%
+  dplyr::rename("Bận tâm" = "df6.Concern_Other")
+
+df6_other <- full_join(df6_other_1, df6_other_2)
+df6_other <- select(df6_other, -ID)
+
+#Saving Data as Excel
+write_xlsx(df6_other, "MP1-insights.xlsx")
+
+#end
