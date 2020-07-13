@@ -60,3 +60,21 @@ df4 <- rbind(df1, df2)
 #Saving ----
 setwd("~/Downloads/Matching Results 1")
 write_xlsx(df4, "Match_Lookup.xlsx")
+
+#Extra Steps... ----
+
+df5 <- read.csv('19 SURVEY_July 11, 2020_21.25 copy.csv', 
+               header = TRUE,
+               na.strings = "")
+
+df5 <- df5 %>% select(X1,
+                      X3_1:X13, 
+                      X1.1:X11_7)
+df5 <- df5[-c(1,2), ]
+df5 <- completeFun(df5, "X1")
+df5$X4 <- df4$Gender
+
+setwd("~/Downloads/Matching Results 1")
+write_xlsx(df4, "Match_Event1.xlsx")
+
+#end
