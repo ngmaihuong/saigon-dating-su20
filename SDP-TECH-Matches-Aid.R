@@ -62,6 +62,7 @@ setwd("~/Downloads/Matching Results 1")
 write_xlsx(df4, "Match_Lookup.xlsx")
 
 #Extra Steps... ----
+setwd("~/Downloads/Matching Results 1/20200711.1026")
 
 df5 <- read.csv('19 SURVEY_July 11, 2020_21.25 copy.csv', 
                header = TRUE,
@@ -75,6 +76,6 @@ df5 <- completeFun(df5, "X1")
 df5$X4 <- df4$Gender
 
 setwd("~/Downloads/Matching Results 1")
-write_xlsx(df4, "Match_Event1.xlsx")
+write_xlsx(df5, "Match_Event1.xlsx")
 
 #end
