@@ -1,7 +1,7 @@
 #Saigon Dating Project
 #Mai-Huong, Nguyen
 #Date created: 07/01/2020
-#Date last updated: 07/11/2020
+#Date last updated: 07/14/2020
 
 #Opening Tools ----
 library(ggplot2)
@@ -18,13 +18,13 @@ library(plyr)
 library(writexl)
 
 #Setting Working Directory ----
-setwd("~/Downloads/SGD/[SGD]MP1")
+setwd("~/Downloads/SGD/Data Analytics/MKT Analytics/20200714.1232")
 
 #Importing Data ----
-df <- read.csv('19 SURVEY_July 11, 2020_21.25.csv', 
+df <- read.csv('19 SURVEY_July 14, 2020_11.32 copy.csv', 
                    header = TRUE,
                    na.strings = "") #Code can be used for file with choice texts as well
-df1 <- read.csv('19 SURVEY_July 11, 2020_21.25 copy.csv', 
+df1 <- read.csv('19 SURVEY_July 14, 2020_11.32.csv', 
                header = TRUE,
                na.strings = "")
 df$X3_1 <- df1$X3_1
@@ -54,6 +54,7 @@ df <- df %>% select(StartDate,
 #                   EndDate,
                     Duration..in.seconds.,
                     RecordedDate,
+                    X1,
                     X3_1:X11_1,
                     X13:X14,        
                     X1.1:X5.1,
@@ -64,7 +65,8 @@ oldnames = colnames(df)
 newnames = c("StartDate", 
 #             "EndDate", 
              "Duration", 
-             "RecordedDate", 
+             "RecordedDate",
+             "UserEmail",
              "BirthYear",
              "Gender",
              "PartnerGender",
@@ -115,7 +117,14 @@ df <- df %>% mutate(Education = fct_recode(Education,
 
 #Modifying Gender Values
 df$Age <- 2021 - as.numeric(as.character(df$BirthYear))
-df3 <- df
+
+rownames(df) <- NULL
+df[df$UserEmail=='Gjdjdjnnsksks',]
+
+df1 = df[1:172,]
+df2 = df[173:364,] #is there a better way to get row index?
+
+df3 <- df1
 df3 <- separate(df3, PartnerGender, c("PartnerGender1", "PartnerGender2"), sep=",")
 
 df3_a <- df3[is.na(df3$PartnerGender2), ]
@@ -124,10 +133,21 @@ df3$PartnerGender2[is.na(df3$PartnerGender2)] <- df3_a$PartnerGender1
 df3_b <- df3[(df3$Gender == df3$PartnerGender1)|(df3$Gender == df3$PartnerGender2), ]
 df3_b$Gender <- 3
 df3[c(rownames(df3_b)),] <- df3_b
-df3$Gender <- ifelse(df3$Gender == 1, "Nam", ifelse(df3$Gender == 2, "Nữ", "LGBTQ+"))
+df3$Gender <- ifelse(df3$Gender == 1, "Nam", 
+                     ifelse(df3$Gender == 2, "Nữ", "LGBTQ+"))
+
+df3 <- completeFun(df3, "UserEmail")
+
+df2$Gender <- ifelse(df2$Gender == 1, 'Nam',
+                     ifelse(df2$Gender == 2, 'Nữ',
+                            ifelse(df2$Gender == 3, 'Nam',
+                                   ifelse(df2$Gender == 4, 'Nữ', 'LGBTQ+'))))
+df2 <- select(df2, -PartnerGender)
+df3 <- select(df3, c(-PartnerGender1, -PartnerGender2))
+df3 <- rbind(df3, df2)
 
 #Saving Data Frame ----
-write.csv(df, "Data20200702-Ced.csv", row.names = F)
+write.csv(df, "Data20200714-Ced.csv", row.names = F)
 rownames(df) <- NULL
 
 #Visualization ----
@@ -173,7 +193,6 @@ df2 %>% ggplot(aes(x=StartHour)) + geom_bar(fill=brand[3]) +
   theme(plot.title = element_text(hjust=0.5, face="bold"))
 
 # Response Duration ----
-
 df$Duration <- as.numeric(levels(df$Duration))[df$Duration]
 
 #Overview
@@ -270,6 +289,12 @@ df3 %>%  group_by(Gender, Education) %>%
 #   labs(title="Survey Response Time by Age")
 
 #Budget and Other Variables ----
+df0 <- df
+df <- completeFun(df, "Budget")
+
+df3_0 <- df3
+df3_0 <- completeFun(df3_0, 'Budget')
+
 df %>% group_by(Budget) %>%
   ggplot(aes(fill = Budget, x=Budget)) +
   geom_bar() + 
@@ -288,7 +313,7 @@ df %>% group_by(Budget) %>%
 #   labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên giới tính", x='Giới tính', y='Số lượng') +
 #   theme(plot.title = element_text(hjust=0.5, face='bold', size=14))
 
-df3 %>%  group_by(Gender, Budget) %>%
+df3_0 %>%  group_by(Gender, Budget) %>%
   dplyr::summarise(count=n()) %>%
   ggplot(aes(y=count, x=Gender)) +
   geom_bar(position='fill', stat='identity', aes(fill=Budget)) + 
@@ -310,29 +335,20 @@ df3 %>%  group_by(Gender, Budget) %>%
 #   theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) +
 #   labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên trải nghiệm du học", x='Chi phí', y='Số lượng')
 
-df3 %>% mutate(StudyAbroad = fct_recode(StudyAbroad,
+df3_0 %>% mutate(StudyAbroad = fct_recode(StudyAbroad,
                                       "Có" = '1',
                                       "Không" = '2')) %>%
-  group_by(StudyAbroad, Budget) %>%
-  dplyr::summarise(count=n()) %>%
-  ggplot(aes(fill=Budget, y=count, x=StudyAbroad)) +
-  geom_bar(position='dodge', stat='identity') +
-  scale_fill_brewer(name="Chi phí", palette="PuRd") +
-  coord_flip() +
-  theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) +
-  labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên trải nghiệm du học", x='Du học sinh', y='Số lượng')
-
-df3 %>% 
-  group_by(StudyAbroad, Budget) %>%
-  dplyr::summarise(count=n()) %>%
-  ggplot(aes(y=count, x=StudyAbroad)) +
-  geom_bar(position='fill', stat='identity', aes(fill=Budget)) + 
-  scale_fill_brewer(name="Chi phí", palette="PuRd") +
-  labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên giới tính", x='Giới tính', y='Tỷ lệ phần trăm') +
-  theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) + coord_flip()
+    group_by(StudyAbroad, Budget) %>%
+    dplyr::summarise(count=n()) %>%
+    ggplot(aes(fill=Budget, y=count, x=StudyAbroad)) +
+    geom_bar(position='dodge', stat='identity') +
+    scale_fill_brewer(name="Chi phí", palette="PuRd") +
+    coord_flip() +
+    theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) +
+    labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên trải nghiệm du học", x='Du học sinh', y='Số lượng')
 
 #Age
-df3 %>%  group_by(Budget, Age) %>%
+df3_0 %>%  group_by(Budget, Age) %>%
   dplyr::summarise(count=n()) %>%
   ggplot(aes(fill=Budget, y=count, x=Age)) +
   scale_fill_brewer(name="Chi phí", palette="PuRd") +
@@ -341,7 +357,7 @@ df3 %>%  group_by(Budget, Age) %>%
   labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên độ tuổi", x='Độ tuổi', y='Số lượng')
 
 #Education
-df3 %>%  group_by(Budget, Education) %>%
+df3_0 %>%  group_by(Budget, Education) %>%
   dplyr::summarise(count=n()) %>%
   ggplot(aes(fill=Budget, y=count, x=Education)) +
   scale_fill_brewer(name="Chi phí", palette="PuRd") +
@@ -351,6 +367,8 @@ df3 %>%  group_by(Budget, Education) %>%
   labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên trình độ học vấn", x='Trình độ học vấn', y='Số lượng')
 
 # Importance of Finance and Status ----
+df <- df0
+
 df$FinanceImportance <- as.numeric(levels(df$FinanceImportance))[df$FinanceImportance]
 df$StatusImportance <- as.numeric(levels(df$StatusImportance))[df$StatusImportance]
 
@@ -420,6 +438,9 @@ df3 %>% mutate(StudyAbroad = fct_recode(StudyAbroad,
   labs(title="Phân loại tầm quan trọng của tuổi và con giáp \ndựa trên trải nghiệm du học", x='Du học sinh', y='Số lượng')
 
 #Activities Preferences ----
+df0 <- df
+
+df <- completeFun(df, 'P2Q11a')
 df4 <- data.frame(df$P2Q11a, df$P2Q11b, df$P2Q11c,df$P2Q11d)
 
 df4_1 <- df4 %>% group_by(df.P2Q11a) %>% dplyr::summarise(count=n())
@@ -466,13 +487,13 @@ df5 %>% group_by(Rank, Option) %>%
 # Challenges and Concerns ----
 
 #Data Frame Conditioning
-df6 <- read.csv('19 SURVEY_July 4, 2020_11.04.csv', 
+df6 <- read.csv('19 SURVEY_July 14, 2020_11.32 copy.csv', 
                 header = TRUE,
                 na.strings = "")
 
 df6 <- df6[-c(1,2), ]
 
-df6 <- df6 %>% select(X3:X4,
+df6 <- df6 %>% select(X4:X5,
                       X7.1:X8_6_TEXT)
 
 oldnames = colnames(df6)
@@ -487,7 +508,7 @@ df6 <- df6 %>% rename_at(vars(oldnames), ~ newnames)
 df6 <- completeFun(df6, c("Gender", "Challenge", "Concern"))
 
 #Change to Adjusted Gender Variable
-df6$Gender <- df3$Gender
+df6$Gender <- df3_0$Gender
 
 #Reframing Data Frame
 df6 <- df6 %>% separate(Challenge, c("Challenge1", "Challenge2", "Challenge3", "Challenge4"), sep=c(",")) %>%
@@ -595,7 +616,20 @@ df6_concern %>% group_by(df6.Gender, Concern) %>%
   #scale_fill_brewer(palette = "Set3", name="Bận tâm") +
   scale_fill_manual(values=c('#4b82a0', '#6fc0ab', "#b0d5d0", '#ffdee5', '#e2b1cd', '#fee8d8'), name="Bận tâm") +
   scale_y_continuous(labels = scales::percent) +
+  theme_bw() +
   labs(title="Tỷ lệ những điều khiến cho buổi hẹn hò đầu tiên \ntrở nên không thoải mái theo giới tính", x="Giới tính", y="Phần trăm") +
+  theme(legend.position = "right",
+        plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14)) +
+  theme(legend.key = element_rect(color = NA, fill = NA),
+        legend.key.size = unit(1, "cm"))
+
+df6_concern %>% group_by(df6.Gender, Concern) %>%
+  dplyr::summarise(count=n()) %>%
+  ggplot(aes(x=df6.Gender, y=count)) +
+  geom_bar(stat='identity', position='dodge', aes(fill=Concern)) +
+  scale_fill_manual(values=c('#4b82a0', '#6fc0ab', "#b0d5d0", '#ffdee5', '#e2b1cd', '#fee8d8'), name="Bận tâm") +
+  labs(title="Những điều khiến cho buổi hẹn hò đầu tiên \ntrở nên không thoải mái theo giới tính", x="Giới tính", y="Số lượng") +
+  theme_bw() +
   theme(legend.position = "right",
         plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14)) +
   theme(legend.key = element_rect(color = NA, fill = NA),
@@ -618,6 +652,6 @@ df6_other <- full_join(df6_other_1, df6_other_2)
 df6_other <- select(df6_other, -ID)
 
 #Saving Data as Excel
-write_xlsx(df6_other, "MP1-insights.xlsx")
+write_xlsx(df6_other, "20200714-insights.xlsx")
 
 #end
