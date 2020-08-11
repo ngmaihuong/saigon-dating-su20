@@ -207,6 +207,7 @@ df %>% ggplot(aes(x=StartHour)) + geom_bar(fill=brand[3]) +
 
 # Response Duration ----
 df$Duration <- as.numeric(levels(df$Duration))[df$Duration]
+#df$Duration <- df$Duration / 60
 
 #Overview
 cor(df$Age, df$Duration) #no linear relationship
@@ -228,8 +229,9 @@ cor(df_1$Age, df_1$Duration) #after eliminating outliers
 df_1 %>%
   ggplot(aes(x=Age, y=Duration)) +
   geom_point(color=brand[3]) + #+ geom_smooth(method=loess, formula = y~x, level=0.99) 
-  labs(title="Mối liên hệ giữa độ tuổi và \nthời gian làm survey", x="Độ tuổi", y="Thời gian làm survey (theo giây)") +
-  theme(legend.position = "none", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
+  labs(title="Mối liên hệ giữa độ tuổi và \nthời gian làm khảo sát", x="Độ tuổi", y="Thời gian làm survey (theo giây)") +
+  theme(legend.position = "none", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14)) +
+  xlim(0, 37)
 
 #Gender Composition ----
 
@@ -260,9 +262,10 @@ ggplot(by_gender, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=Gender)) +
   xlim(c(1, 4)) +
   theme_void() + 
   theme(legend.position = "none", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=18)) +
-  labs(title="Tỉ lệ giới tính tham gia survey")
+  labs(title="Tỉ lệ giới tính tham gia khảo sát \nN = 422")
 
 #Gender and Other Variables ----
+count(df$StudyAbroad)
 
 #Study Abroad
 df3 %>% group_by(Gender, StudyAbroad) %>%
@@ -273,7 +276,7 @@ df3 %>% group_by(Gender, StudyAbroad) %>%
                     name="Du học sinh?",
                     labels=c("Có", "Không")) +
   labs(title="Phân loại giới tính và trải nghiệm du học", x="Giới tính", y="Số lượng") + 
-  theme(plot.title = element_text(hjust=0.5, face="bold", size=14))
+  theme(plot.title = element_text(hjust=0.5, vjust=1.5, face="bold", size=14), legend.key=element_blank()) 
 
 #Age
 df3 %>% group_by(Gender, Age) %>%
@@ -281,7 +284,7 @@ df3 %>% group_by(Gender, Age) %>%
   ggplot(aes(fill=Gender, y=count, x=Age)) + 
   geom_bar(position="stack", stat="identity") + 
   labs(title="Phân loại giới tính và độ tuổi", x="Độ tuổi", y="Số lượng") + 
-  theme(plot.title = element_text(hjust=0.5, face="bold", size=14)) + coord_flip() +
+  theme(plot.title = element_text(hjust=0.5, vjust=1.5, face="bold", size=14)) + coord_flip() +
   scale_fill_manual(values=brand, 
                     name="Giới tính")
 
@@ -294,7 +297,7 @@ df3 %>%  group_by(Gender, Education) %>%
   coord_flip() +
   scale_fill_manual(values=brand, 
                     name="Giới tính") +
-  theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) +
+  theme(plot.title = element_text(hjust=0.5, vjust=1.5, face='bold', size=14)) +
   labs(title="Phân loại trình độ học vấn \ndựa trên giới tính", x='Trình độ học vấn', y='Số lượng')
 
 # df %>% ggplot(aes(x=RecordedDate)) +
@@ -314,7 +317,7 @@ df %>% group_by(Budget) %>%
   scale_fill_brewer(name="Chi phí", palette="PuRd") +
   coord_flip() +
   labs(title="Phân loại chi phí sẵn sàng chi trả \ncho một buổi hẹn hò", x="Chi phí", y="Số lượng") +
-  theme(plot.title = element_text(hjust=0.5, face="bold", size=14))
+  theme(plot.title = element_text(hjust=0.5, vjust=1.5, face="bold", size=14))
 
 #Gender
 
@@ -324,7 +327,7 @@ df3_0 %>%  group_by(Gender, Budget) %>%
   geom_bar(position='stack', stat='identity') +
   scale_fill_brewer(name="Chi phí", palette="PuRd") +
   labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên giới tính", x='Giới tính', y='Số lượng') +
-  theme(plot.title = element_text(hjust=0.5, face='bold', size=14))
+  theme(plot.title = element_text(hjust=0.5, vjust=1.5, face='bold', size=14))
 
 df3_0 %>%  group_by(Gender, Budget) %>%
   dplyr::summarise(count=n()) %>%
@@ -333,7 +336,7 @@ df3_0 %>%  group_by(Gender, Budget) %>%
   scale_fill_brewer(name="Chi phí", palette="PuRd") +
   scale_y_continuous(labels = scales::percent) +
   labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên giới tính", x='Giới tính', y='Tỷ lệ phần trăm') +
-  theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) + coord_flip()
+  theme(plot.title = element_text(hjust=0.5, vjust=1.5, face='bold', size=14)) + coord_flip()
 
 #Study Abroad
 
@@ -357,7 +360,7 @@ df3_0 %>% mutate(StudyAbroad = fct_recode(StudyAbroad,
     geom_bar(position='dodge', stat='identity') +
     scale_fill_brewer(name="Chi phí", palette="PuRd") +
     coord_flip() +
-    theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) +
+    theme(plot.title = element_text(hjust=0.5, vjust=1.5, face='bold', size=14)) +
     labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên trải nghiệm du học", x='Du học sinh', y='Số lượng')
 
 #Age
@@ -366,7 +369,7 @@ df3_0 %>%  group_by(Budget, Age) %>%
   ggplot(aes(fill=Budget, y=count, x=Age)) +
   scale_fill_brewer(name="Chi phí", palette="PuRd") +
   geom_bar(position='stack', stat='identity') +
-  theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) +
+  theme(plot.title = element_text(hjust=0.5, vjust=1.5, face='bold', size=14)) +
   labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên độ tuổi", x='Độ tuổi', y='Số lượng')
 
 #Education
@@ -376,7 +379,7 @@ df3_0 %>%  group_by(Budget, Education) %>%
   scale_fill_brewer(name="Chi phí", palette="PuRd") +
   geom_bar(position='stack', stat='identity') +
   coord_flip() +
-  theme(plot.title = element_text(hjust=0.5, face='bold', size=14)) +
+  theme(plot.title = element_text(hjust=0.5, vjust=1.5, face='bold', size=14)) +
   labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên trình độ học vấn", x='Trình độ học vấn', y='Số lượng')
 
 # Importance of Finance and Status ----
@@ -402,7 +405,7 @@ df %>% ggplot(aes(x=FinanceImportance, y=StatusImportance)) +
   labs(title="Mối liên hệ giữa tầm quan trọng của khả năng tài chính và \ntầm quan trọng của nghề nghiệp/học vấn của đối phương", 
        x="Tầm quan trọng của \nkhả năng tài chính của đối phương", 
        y="Tầm quan trọng của \nnghề nghiệp/học vấn của đối phương") +
-  theme(legend.position = "none", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
+  theme(legend.position = "none", plot.title = element_text(hjust=0.5, vjust=1.5, face="bold", size=14))
 
 cor(df$StatusImportance, df$FinanceImportance) #There is a strong positive relationship.
 
@@ -422,7 +425,7 @@ df3 %>% ggplot(aes(x=Commitment, fill=Gender)) +
   geom_vline(data=gender_mean, aes(xintercept=grp.mean), color=brand, linetype="dashed") +
   scale_fill_manual(values=brand, name="Giới tính") +
   labs(title="Độ sẵn sàng nghiêm túc với \nmột mối quan hệ dựa trên giới tính", x="Độ sẵn sàng", y="Mật độ xác suất") +
-  theme(plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14))
+  theme(plot.title = element_text(hjust=0.5, vjust=1.5, face="bold", size=14))
 
 #Chinese Zodiac ----
 df3 %>% group_by(Age, ChineseZodiac, Gender) %>%
@@ -434,7 +437,7 @@ df3 %>% group_by(Age, ChineseZodiac, Gender) %>%
                     name="Tầm quan trọng của \ntuổi và con giáp",
                     labels=c("Có", "Không")) +
   labs(title="Phân loại độ tuổi và \ntầm quan trọng của tuổi và con giáp \ntheo giới tính", x="Độ tuổi", y="Số lượng") + 
-  theme(plot.title = element_text(hjust=0.5, face="bold", size=14))
+  theme(plot.title = element_text(hjust=0.5, vjust=1.5, face="bold", size=14))
 
 df3 %>% mutate(StudyAbroad = fct_recode(StudyAbroad,
                                         "Có" = '1',
