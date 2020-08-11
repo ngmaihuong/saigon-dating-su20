@@ -1,7 +1,7 @@
 #Saigon Dating Project
 #Mai-Huong, Nguyen
 #Date created: 07/01/2020
-#Date last updated: 07/14/2020
+#Date last updated: 08/11/2020
 
 #Opening Tools ----
 library(ggplot2)
@@ -18,22 +18,27 @@ library(plyr)
 library(writexl)
 
 #Setting Working Directory ----
-setwd("~/Downloads/SGD/Data Analytics/MKT Analytics/20200714.1232")
+setwd("~/Downloads/SGD/Data Analytics/MKT Analytics/Final Data")
 
 #Importing Data ----
-df <- read.csv('19 SURVEY_July 14, 2020_11.32 copy.csv', 
+df <- read.csv('19 SURVEY_August 12, 2020_02.29 copy.csv', 
                    header = TRUE,
                    na.strings = "") #Code can be used for file with choice texts as well
-df1 <- read.csv('19 SURVEY_July 14, 2020_11.32.csv', 
+df1 <- read.csv('19 SURVEY_August 12, 2020_02.29.csv', 
                header = TRUE,
                na.strings = "")
+
+#Replace Year of Birth column
 df$X3_1 <- df1$X3_1
 rm(df1)
 
+#Deleting first two rows
 df <- df[-c(1,2), ]
 rownames(df) <- NULL
 
 #Transforming Data Frame ----
+
+#No scientific notation
 options(scipen=5)
 
 #Defining functions
@@ -90,6 +95,8 @@ newnames = c("StartDate",
              "P2Q11d")
 df <- df %>% rename_at(vars(oldnames), ~ newnames)
 #df <- na.omit(df)
+
+#Removing empty responses
 df <- completeFun(df, "BirthYear")
 
 #Conditioning Time Variables
@@ -119,10 +126,13 @@ df <- df %>% mutate(Education = fct_recode(Education,
 df$Age <- 2021 - as.numeric(as.character(df$BirthYear))
 
 rownames(df) <- NULL
+
+#Find the index of the last person on the old 'Gender/Sexuality' question
 df[df$UserEmail=='Gjdjdjnnsksks',]
 
+#Break the dataset into 2: Before and after modifying the 'Gender/Sexuality' question
 df1 = df[1:172,]
-df2 = df[173:364,] #is there a better way to get row index?
+df2 = df[173:422,] #is there a better way to get row index?
 
 df3 <- df1
 df3 <- separate(df3, PartnerGender, c("PartnerGender1", "PartnerGender2"), sep=",")
@@ -130,12 +140,15 @@ df3 <- separate(df3, PartnerGender, c("PartnerGender1", "PartnerGender2"), sep="
 df3_a <- df3[is.na(df3$PartnerGender2), ]
 df3$PartnerGender2[is.na(df3$PartnerGender2)] <- df3_a$PartnerGender1
 
-df3_b <- df3[(df3$Gender == df3$PartnerGender1)|(df3$Gender == df3$PartnerGender2), ]
+#If the person is attracted to those of the same gender OR they don't care about their partner gender, they are put into LGBTQ+ group (coded 3)
+df3_b <- df3[(df3$Gender == df3$PartnerGender1)|(df3$Gender == df3$PartnerGender2)|(df3$PartnerGender1 == 7)|(df3$PartnerGender2 == 7), ]
 df3_b$Gender <- 3
 df3[c(rownames(df3_b)),] <- df3_b
+
 df3$Gender <- ifelse(df3$Gender == 1, "Nam", 
                      ifelse(df3$Gender == 2, "Nữ", "LGBTQ+"))
 
+#Remove NA's that somehow appeared
 df3 <- completeFun(df3, "UserEmail")
 
 df2$Gender <- ifelse(df2$Gender == 1, 'Nam',
@@ -147,7 +160,7 @@ df3 <- select(df3, c(-PartnerGender1, -PartnerGender2))
 df3 <- rbind(df3, df2)
 
 #Saving Data Frame ----
-write.csv(df, "Data20200714-Ced.csv", row.names = F)
+write.csv(df, "Data20200811-Ced.csv", row.names = F)
 rownames(df) <- NULL
 
 #Visualization ----
@@ -164,8 +177,8 @@ by_date <- df %>%
 
 df %>% ggplot(aes(x=StartDate)) + geom_bar(fill=brand[3]) + 
   labs(title="Số lượng survey nhận được theo ngày", x="Ngày (mm-dd)",y="Số lượng") + 
-  theme(
-    plot.title = element_text(hjust=0.5, face="bold"))
+  theme(plot.title = element_text(hjust=0.5, face="bold"), 
+        axis.text.x = element_text(angle=45, hjust=1))
 
 #Adjusting time settings
 df$StartTime <- hms(df$StartTime)
@@ -178,19 +191,19 @@ df %>% ggplot(aes(x=StartHour)) + geom_bar(fill=brand[3]) +
   labs(title="Số lượng survey nhận được theo giờ", x="Giờ",y="Số lượng") + 
   theme(plot.title = element_text(hjust=0.5, face="bold"))
 
-#Before the pinned post
-df1 <- df %>% filter(StartDate < "06-30")
-
-df1 %>% ggplot(aes(x=StartHour)) + geom_bar(fill=brand[3]) +  
-  labs(title="Số lượng survey nhận được theo giờ \n(trước khi đăng pinned post)", x="Giờ", y="Số lượng") + 
-  theme(plot.title = element_text(hjust=0.5, face="bold"))
-
-#After the pinned post
-df2 <- df %>% filter(StartDate >= "06-30")
-
-df2 %>% ggplot(aes(x=StartHour)) + geom_bar(fill=brand[3]) +  
-  labs(title="Số lượng survey nhận được theo giờ \n(sau khi đăng pinned post)", x="Giờ", y="Số lượng") + 
-  theme(plot.title = element_text(hjust=0.5, face="bold"))
+# #Before the pinned post (no longer relevant on new data)
+# df1 <- df %>% filter(StartDate < "06-30")
+# 
+# df1 %>% ggplot(aes(x=StartHour)) + geom_bar(fill=brand[3]) +
+#   labs(title="Số lượng survey nhận được theo giờ \n(trước khi đăng pinned post)", x="Giờ", y="Số lượng") +
+#   theme(plot.title = element_text(hjust=0.5, face="bold"))
+# 
+# #After the pinned post
+# df2 <- df %>% filter(StartDate >= "06-30")
+# 
+# df2 %>% ggplot(aes(x=StartHour)) + geom_bar(fill=brand[3]) +
+#   labs(title="Số lượng survey nhận được theo giờ \n(sau khi đăng pinned post)", x="Giờ", y="Số lượng") +
+#   theme(plot.title = element_text(hjust=0.5, face="bold"))
 
 # Response Duration ----
 df$Duration <- as.numeric(levels(df$Duration))[df$Duration]
@@ -305,13 +318,13 @@ df %>% group_by(Budget) %>%
 
 #Gender
 
-# df3 %>%  group_by(Gender, Budget) %>%
-#   dplyr::summarise(count=n()) %>%
-#   ggplot(aes(fill=Budget, y=count, x=Gender)) +
-#   geom_bar(position='stack', stat='identity') + 
-#   scale_fill_brewer(name="Chi phí", palette="PuRd") +
-#   labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên giới tính", x='Giới tính', y='Số lượng') +
-#   theme(plot.title = element_text(hjust=0.5, face='bold', size=14))
+df3_0 %>%  group_by(Gender, Budget) %>%
+  dplyr::summarise(count=n()) %>%
+  ggplot(aes(fill=Budget, y=count, x=Gender)) +
+  geom_bar(position='stack', stat='identity') +
+  scale_fill_brewer(name="Chi phí", palette="PuRd") +
+  labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên giới tính", x='Giới tính', y='Số lượng') +
+  theme(plot.title = element_text(hjust=0.5, face='bold', size=14))
 
 df3_0 %>%  group_by(Gender, Budget) %>%
   dplyr::summarise(count=n()) %>%
@@ -324,11 +337,11 @@ df3_0 %>%  group_by(Gender, Budget) %>%
 
 #Study Abroad
 
-# df3 %>%  group_by(StudyAbroad, Budget) %>%
+# df3_0 %>%  group_by(StudyAbroad, Budget) %>%
 #   dplyr::summarise(count=n()) %>%
 #   ggplot(aes(fill=StudyAbroad, y=count, x=Budget)) +
 #   geom_bar(position='dodge', stat='identity') +
-#   scale_fill_manual(values=c(brand[2], brand[1]), 
+#   scale_fill_manual(values=c(brand[2], brand[1]),
 #                     name="Du học sinh?",
 #                     labels=c("Có", "Không")) +
 #   coord_flip() +
@@ -487,7 +500,7 @@ df5 %>% group_by(Rank, Option) %>%
 # Challenges and Concerns ----
 
 #Data Frame Conditioning
-df6 <- read.csv('19 SURVEY_July 14, 2020_11.32 copy.csv', 
+df6 <- read.csv('19 SURVEY_August 12, 2020_02.29 copy.csv', 
                 header = TRUE,
                 na.strings = "")
 
@@ -652,6 +665,6 @@ df6_other <- full_join(df6_other_1, df6_other_2)
 df6_other <- select(df6_other, -ID)
 
 #Saving Data as Excel
-write_xlsx(df6_other, "20200714-insights.xlsx")
+write_xlsx(df6_other, "20200811-insights.xlsx")
 
 #end
