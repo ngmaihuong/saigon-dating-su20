@@ -617,7 +617,7 @@ df6_concern %>% group_by(df6.Gender, Concern) %>%
   scale_fill_manual(values=c('#4b82a0', '#6fc0ab', "#b0d5d0", '#ffdee5', '#e2b1cd', '#fee8d8'), name="Bận tâm") +
   scale_y_continuous(labels = scales::percent) +
   theme_bw() +
-  labs(title="Tỷ lệ những điều khiến cho buổi hẹn hò đầu tiên \ntrở nên không thoải mái theo giới tính", x="Giới tính", y="Phần trăm") +
+  labs(title="Tỷ lệ những điều khiến cho buổi hẹn hò đầu tiên \ntrở nên không thoải mái theo nhóm đối tượng", x="Nhóm đối tượng", y="Phần trăm") +
   theme(legend.position = "right",
         plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14)) +
   theme(legend.key = element_rect(color = NA, fill = NA),
@@ -628,7 +628,7 @@ df6_concern %>% group_by(df6.Gender, Concern) %>%
   ggplot(aes(x=df6.Gender, y=count)) +
   geom_bar(stat='identity', position='dodge', aes(fill=Concern)) +
   scale_fill_manual(values=c('#4b82a0', '#6fc0ab', "#b0d5d0", '#ffdee5', '#e2b1cd', '#fee8d8'), name="Bận tâm") +
-  labs(title="Những điều khiến cho buổi hẹn hò đầu tiên \ntrở nên không thoải mái theo giới tính", x="Giới tính", y="Số lượng") +
+  labs(title="Những điều khiến cho buổi hẹn hò đầu tiên \ntrở nên không thoải mái theo nhóm đối tượng", x="Nhóm đối tượng", y="Số lượng") +
   theme_bw() +
   theme(legend.position = "right",
         plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14)) +
