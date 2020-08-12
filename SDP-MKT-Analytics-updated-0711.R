@@ -176,7 +176,7 @@ by_date <- df %>%
   dplyr::rename('ResponseQuantity'=n)
 
 df %>% ggplot(aes(x=StartDate)) + geom_bar(fill=brand[3]) + 
-  labs(title="Số lượng survey nhận được theo ngày", x="Ngày (mm-dd)",y="Số lượng") + 
+  labs(title="Số lượng khảo sát nhận được theo ngày", x="Ngày (mm-dd)",y="Số lượng") + 
   theme(plot.title = element_text(hjust=0.5, face="bold"), 
         axis.text.x = element_text(angle=45, hjust=1))
 
@@ -188,21 +188,21 @@ df$StartHour <- lubridate::hour(df$StartTime)
 #df$EndTime <- hour(df$EndTime)
 
 df %>% ggplot(aes(x=StartHour)) + geom_bar(fill=brand[3]) +  
-  labs(title="Số lượng survey nhận được theo giờ", x="Giờ",y="Số lượng") + 
+  labs(title="Số lượng khảo sát nhận được theo giờ", x="Giờ",y="Số lượng") + 
   theme(plot.title = element_text(hjust=0.5, face="bold"))
 
 # #Before the pinned post (no longer relevant on new data)
 # df1 <- df %>% filter(StartDate < "06-30")
 # 
 # df1 %>% ggplot(aes(x=StartHour)) + geom_bar(fill=brand[3]) +
-#   labs(title="Số lượng survey nhận được theo giờ \n(trước khi đăng pinned post)", x="Giờ", y="Số lượng") +
+#   labs(title="Số lượng khảo sát nhận được theo giờ \n(trước khi đăng pinned post)", x="Giờ", y="Số lượng") +
 #   theme(plot.title = element_text(hjust=0.5, face="bold"))
 # 
 # #After the pinned post
 # df2 <- df %>% filter(StartDate >= "06-30")
 # 
 # df2 %>% ggplot(aes(x=StartHour)) + geom_bar(fill=brand[3]) +
-#   labs(title="Số lượng survey nhận được theo giờ \n(sau khi đăng pinned post)", x="Giờ", y="Số lượng") +
+#   labs(title="Số lượng khảo sát nhận được theo giờ \n(sau khi đăng pinned post)", x="Giờ", y="Số lượng") +
 #   theme(plot.title = element_text(hjust=0.5, face="bold"))
 
 # Response Duration ----
@@ -229,7 +229,7 @@ cor(df_1$Age, df_1$Duration) #after eliminating outliers
 df_1 %>%
   ggplot(aes(x=Age, y=Duration)) +
   geom_point(color=brand[3]) + #+ geom_smooth(method=loess, formula = y~x, level=0.99) 
-  labs(title="Mối liên hệ giữa độ tuổi và \nthời gian làm khảo sát", x="Độ tuổi", y="Thời gian làm survey (theo giây)") +
+  labs(title="Mối liên hệ giữa độ tuổi và \nthời gian làm khảo sát", x="Độ tuổi", y="Thời gian làm khảo sát (theo giây)") +
   theme(legend.position = "none", plot.title = element_text(hjust=0.5, vjust=0.1, face="bold", size=14)) +
   xlim(0, 37)
 
