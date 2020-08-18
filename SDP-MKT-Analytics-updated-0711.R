@@ -316,7 +316,7 @@ df %>% group_by(Budget) %>%
   geom_bar() + 
   scale_fill_brewer(name="Chi phí", palette="PuRd") +
   coord_flip() +
-  labs(title="Phân loại chi phí sẵn sàng chi trả \ncho một buổi hẹn hò", x="Chi phí", y="Số lượng") +
+  labs(title="Phân loại chi phí sẵn sàng chi trả \ncho buổi hẹn hò đầu tiên", x="Chi phí", y="Số lượng") +
   theme(plot.title = element_text(hjust=0.5, vjust=1.5, face="bold", size=14))
 
 #Gender
@@ -326,7 +326,7 @@ df3_0 %>%  group_by(Gender, Budget) %>%
   ggplot(aes(fill=Budget, y=count, x=Gender)) +
   geom_bar(position='stack', stat='identity') +
   scale_fill_brewer(name="Chi phí", palette="PuRd") +
-  labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên giới tính", x='Giới tính', y='Số lượng') +
+  labs(title="Phân loại chi phí sẵn sàng chi trả cho buổi hẹn hò đầu tiên \ndựa trên giới tính", x='Giới tính', y='Số lượng') +
   theme(plot.title = element_text(hjust=0.5, vjust=1.5, face='bold', size=14))
 
 df3_0 %>%  group_by(Gender, Budget) %>%
@@ -335,7 +335,7 @@ df3_0 %>%  group_by(Gender, Budget) %>%
   geom_bar(position='fill', stat='identity', aes(fill=Budget)) + 
   scale_fill_brewer(name="Chi phí", palette="PuRd") +
   scale_y_continuous(labels = scales::percent) +
-  labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên giới tính", x='Giới tính', y='Tỷ lệ phần trăm') +
+  labs(title="Phân loại chi phí sẵn sàng chi trả cho buổi hẹn hò đầu tiên \ndựa trên giới tính", x='Giới tính', y='Tỷ lệ phần trăm') +
   theme(plot.title = element_text(hjust=0.5, vjust=1.5, face='bold', size=14)) + coord_flip()
 
 #Study Abroad
@@ -361,7 +361,7 @@ df3_0 %>% mutate(StudyAbroad = fct_recode(StudyAbroad,
     scale_fill_brewer(name="Chi phí", palette="PuRd") +
     coord_flip() +
     theme(plot.title = element_text(hjust=0.5, vjust=1.5, face='bold', size=14)) +
-    labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên trải nghiệm du học", x='Du học sinh', y='Số lượng')
+    labs(title="Phân loại chi phí sẵn sàng chi trả cho buổi hẹn hò đầu tiên \ndựa trên trải nghiệm du học", x='Du học sinh', y='Số lượng')
 
 #Age
 df3_0 %>%  group_by(Budget, Age) %>%
@@ -380,7 +380,7 @@ df3_0 %>%  group_by(Budget, Education) %>%
   geom_bar(position='stack', stat='identity') +
   coord_flip() +
   theme(plot.title = element_text(hjust=0.5, vjust=1.5, face='bold', size=14)) +
-  labs(title="Phân loại chi phí sẵn sàng chi trả cho một buổi hẹn hò \ndựa trên trình độ học vấn", x='Trình độ học vấn', y='Số lượng')
+  labs(title="Phân loại chi phí sẵn sàng chi trả cho buổi hẹn hò đầu tiên \ndựa trên trình độ học vấn", x='Trình độ học vấn', y='Số lượng')
 
 # Importance of Finance and Status ----
 df <- df0
