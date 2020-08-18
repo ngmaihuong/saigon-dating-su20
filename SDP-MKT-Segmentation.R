@@ -1,14 +1,16 @@
 #Saigon Dating Project
 #Mai-Huong, Nguyen
 #User Segmentaion Analytics
-#Date created: 07/01/2020
-#Date last updated: 08/11/2020
+#Date created: 08/18/2020
+#Date last updated: 08/18/2020
 
 #Opening Tools ----
 library(dplyr)
 library(tidyr)
 library(forcats)
 library(writexl)
+library(readxl)
+library(flexclust)
 
 #Setting Working Directory ----
 setwd("~/Downloads/SGD/Data Analytics/MKT Analytics/Final Data")
@@ -24,16 +26,43 @@ df <- select(df, P2Q1:P2Q5)
 #Saving Data ----
 write.csv(df, "Persona-Ced.csv", row.names = F)
 
-# #Re-framing Data Frame ----
-# newnames = c('1.1', '1.2', '1.3', '1.4',
-#              '2.1', '2.2', '2.3', '2.4',
-#              '3.1', '3.2', '3.3', '3.4', '3.5',
-#              '4.1', '4.2', '4.3', '4.4',
-#              '5.1', '5.2', '5.3', '5.4', '5.5')
-# 
-# #Creating an empty data frame
-# df1 <- data.frame(matrix(NA, nrow=, ncol=length(newnames)))
-# 
-# #Renaming columns
-# oldnames = colnames(df1)
-# df1 <- df1 %>% rename_at(vars(oldnames), ~ newnames)
+#######################
+
+#Import Binary-coded Data ----
+df <- read_excel('SDP-binarycoded.xlsx')
+colMeans(df)
+
+#flexclust Attempts
+fc_cont <- new('flexclustControl')
+fc_cont@iter.max <- 30
+
+my_seed <- 0
+my_family <- 'ejaccard'
+num_clust <- 4
+
+my_seed <- my_seed + 1
+set.seed(my_seed)
+cl <- kcca(df, 
+           k=num_clust, 
+           save.data = TRUE, 
+           control = fc_cont,
+           family = kccaFamily(my_family))
+summary(cl)
+
+pop_av_dist <- with(cl@clusinfo, 
+                    sum(size*av_dist)/sum(size))
+main_txt <- paste('kcca ', cl@family@name, ' - ',
+                  num_clust, ' clusters (',
+                  389, ' sample, seed = ', my_seed,
+                  ')', sep = '')
+
+# Neighborhood Graph on 1st principle components
+df.pca <- prcomp(df)
+plot(cl, data = as.matrix(df), project = df.pca,
+     main = main_txt,
+     sub = paste('\nAv Dist = ', format(pop_av_dist, digits = 5),
+                ', k = ', cl@k, sep = '')
+)
+
+#Activity profiles for each segment
+print(barchart(cl, main = main_txt, strip.predix = '#', scales = list(cex=0.6)))
