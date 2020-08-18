@@ -60,3 +60,6 @@ for row in range(len(df)):
     for val in range(1, 6):
         if df.iloc[row,4] == val:
             df1.iloc[row, val+16] = 1
+            
+#Export data to Excel file
+df1.to_excel('SDP-binarycoded.xlsx', index = False)
