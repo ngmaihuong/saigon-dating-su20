@@ -59,10 +59,19 @@ main_txt <- paste('kcca ', cl@family@name, ' - ',
 # Neighborhood Graph on 1st principle components
 df.pca <- prcomp(df)
 plot(cl, data = as.matrix(df), project = df.pca,
-     main = main_txt,
+     main = main_txt, 
      sub = paste('\nAv Dist = ', format(pop_av_dist, digits = 5),
                 ', k = ', cl@k, sep = '')
 )
 
 #Activity profiles for each segment
-print(barchart(cl, main = main_txt, strip.predix = '#', scales = list(cex=0.6)))
+barchart(cl, main = main_txt, strip.predix = '#', scales = list(cex=0.6))
+
+#Convert kcca into data frame
+personas <- kcca2df(cl)
+View(personas)
+
+cl1 <- filter(personas, personas$group == 1)
+cl2 <- filter(personas, personas$group == 2)
+cl3 <- filter(personas, personas$group == 3)
+cl4 <- filter(personas, personas$group == 4)
