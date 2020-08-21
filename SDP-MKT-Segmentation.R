@@ -71,7 +71,12 @@ barchart(cl, main = main_txt, strip.predix = '#', scales = list(cex=0.6))
 personas <- kcca2df(cl)
 View(personas)
 
-cl1 <- filter(personas, personas$group == 1)
-cl2 <- filter(personas, personas$group == 2)
-cl3 <- filter(personas, personas$group == 3)
-cl4 <- filter(personas, personas$group == 4)
+#Transform data frame from long to wide
+q_list <- as.character(levels(personas$variable))
+personas_df <- data.frame(matrix(NA, nrow=nrow(df), ncol=0))
+
+for(i in 1:length(q_list)){
+  new_cl <- filter(personas, personas$variable == q_list[i])
+  personas_df <- cbind.data.frame(personas_df, new_cl)
+}
+
