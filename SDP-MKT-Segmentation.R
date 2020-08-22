@@ -145,3 +145,4 @@ summary(cluster2, maxsum = nlevels(cluster1$EmploymentStatus))
 summary(cluster3, maxsum = nlevels(cluster1$EmploymentStatus))
 summary(cluster4, maxsum = nlevels(cluster1$EmploymentStatus))
 
+#end
