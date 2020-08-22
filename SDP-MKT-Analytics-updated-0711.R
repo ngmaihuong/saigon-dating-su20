@@ -1,7 +1,7 @@
 #Saigon Dating Project
 #Mai-Huong, Nguyen
 #Date created: 07/01/2020
-#Date last updated: 08/11/2020
+#Date last updated: 08/21/2020
 
 #Opening Tools ----
 library(ggplot2)
@@ -28,8 +28,9 @@ df1 <- read.csv('19 SURVEY_August 12, 2020_02.29.csv',
                header = TRUE,
                na.strings = "")
 
-#Replace Year of Birth column
+#Replace Year of Birth and Employment Status columns
 df$X3_1 <- df1$X3_1
+df$X7 <- df1$X7
 rm(df1)
 
 #Deleting first two rows
