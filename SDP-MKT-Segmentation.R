@@ -27,16 +27,25 @@ full_df_cl <- select(full_df, P2Q1:P2Q5)
 
 #For demographics identification
 full_df_demo <- select(full_df,
-                       UserEmail,
+#                       UserEmail,
                        Gender,
                        Age,
+                       Education,
                        EmploymentStatus, 
                        StudyAbroad,
                        ChineseZodiac,
                        Budget)
 
-#Recode data (for future use)
+#Recoding values
+full_df_demo$Gender <- ifelse(full_df_demo$Gender==1, 'Nam',
+                              ifelse(full_df_demo$Gender==2, 'Nữ', 'LGBTQ+'))
+full_df_demo$StudyAbroad <- ifelse(full_df_demo$StudyAbroad==1, 'Có', 'Không')
+full_df_demo$ChineseZodiac <- ifelse(full_df_demo$ChineseZodiac==1, 'Có', 'Không')
 
+#Changing to factors
+full_df_demo$Gender <- as.factor(full_df_demo$Gender)
+full_df_demo$StudyAbroad <- as.factor(full_df_demo$StudyAbroad)
+full_df_demo$ChineseZodiac <- as.factor(full_df_demo$ChineseZodiac)
 
 #Add index columns
 id <- seq(1, nrow(full_df_demo))
@@ -46,18 +55,16 @@ full_df_demo <- full_df_demo %>% select('id', everything())
 #Saving Data ----
 write.csv(full_df_cl, "Persona-Ced.csv", row.names = F)
 
-#######################
-
 #Import Binary-coded Data ----
 df <- read_excel('SDP-binarycoded.xlsx')
 colMeans(df)
 col_names <- colnames(df)
 
-#flexclust Attempts
+#flexclust Attempts ----
 fc_cont <- new('flexclustControl')
 fc_cont@iter.max <- 30
 
-my_seed <- 0
+my_seed <- 1
 my_family <- 'ejaccard'
 num_clust <- 4
 
@@ -77,7 +84,7 @@ main_txt <- paste('kcca ', cl@family@name, ' - ',
                   389, ' sample, seed = ', my_seed,
                   ')', sep = '')
 
-# Neighborhood Graph on 1st principle components
+# Neighborhood Graph on 1st principle components ----
 df.pca <- prcomp(df)
 plot(cl, data = as.matrix(df), project = df.pca,
      main = main_txt, 
@@ -85,12 +92,11 @@ plot(cl, data = as.matrix(df), project = df.pca,
                 ', k = ', cl@k, sep = '')
 )
 
-#Activity profiles for each segment
+#Activity profiles for each segment ----
 barchart(cl, main = main_txt, strip.predix = '#', scales = list(cex=0.6))
 
 #Convert kcca into data frame
 personas <- kcca2df(cl)
-View(personas)
 
 #Transform data frame from long to wide
 q_list <- as.character(levels(personas$variable))
@@ -122,3 +128,20 @@ personas_df <- personas_df %>% select('id', everything())
 
 #NOTE: FLEXCLUST CLUSTERING DID NOT CHANGE THE INDEX OF THE OBSERVATIONS. THEREFORE, TO GET DEMOGRAPHIC 
 # INFORMATION, WE CAN MATCH BY INDEX AND REFER TO THE FULL DATASET.
+
+#Match clusters to demographic information ----
+cls <- select(personas_df, id, cluster)
+cls_with_demo <- full_join(full_df_demo, cls, by='id')
+
+#Divide clusters
+cluster1 <- filter(cls_with_demo, cluster == 1)
+cluster2 <- filter(cls_with_demo, cluster == 2)
+cluster3 <- filter(cls_with_demo, cluster == 3)
+cluster4 <- filter(cls_with_demo, cluster == 4)
+
+#USE SUMMARY() FOR DESCRIPTIVE STATISTICS
+summary(cluster1, maxsum = nlevels(cluster1$EmploymentStatus))
+summary(cluster2, maxsum = nlevels(cluster1$EmploymentStatus))
+summary(cluster3, maxsum = nlevels(cluster1$EmploymentStatus))
+summary(cluster4, maxsum = nlevels(cluster1$EmploymentStatus))
+
