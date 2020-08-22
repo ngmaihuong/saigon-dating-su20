@@ -31,6 +31,7 @@ write.csv(df, "Persona-Ced.csv", row.names = F)
 #Import Binary-coded Data ----
 df <- read_excel('SDP-binarycoded.xlsx')
 colMeans(df)
+col_names <- colnames(df)
 
 #flexclust Attempts
 fc_cont <- new('flexclustControl')
@@ -80,3 +81,16 @@ for(i in 1:length(q_list)){
   personas_df <- cbind.data.frame(personas_df, new_cl)
 }
 
+#Rename columns
+colnames(personas_df) <- as.character(seq(1, ncol(personas_df)))
+
+#Remove duplicate columns
+n_col <- ncol(personas_df)
+col_to_keep <- seq(2, n_col, 3)
+personas_df <- personas_df %>% select(-col_to_keep)
+
+col_to_keep <- as.character(seq(6, n_col, 3))
+personas_df <- personas_df %>% select(-col_to_keep)
+
+personas_df <- personas_df %>% select('3', everything())
+colnames(personas_df) <- c('cluster', col_names)
