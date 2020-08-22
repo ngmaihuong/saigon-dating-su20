@@ -2,7 +2,7 @@
 #Mai-Huong, Nguyen
 #User Segmentaion Analytics
 #Date created: 08/18/2020
-#Date last updated: 08/18/2020
+#Date last updated: 08/21/2020
 
 #Opening Tools ----
 library(dplyr)
@@ -16,15 +16,35 @@ library(flexclust)
 setwd("~/Downloads/SGD/Data Analytics/MKT Analytics/Final Data")
 
 #Importing Data ----
-df <- read.csv('Data20200811-Ced.csv', 
-               header = TRUE,
-               na.strings = "")
+full_df <- read.csv('Data20200811-Ced.csv', 
+                     header = TRUE,
+                     na.strings = "")
 
 #Retaining Necessary Data ----
-df <- select(df, P2Q1:P2Q5)
 
+#For clustering
+full_df_cl <- select(full_df, P2Q1:P2Q5)
+
+#For demographics identification
+full_df_demo <- select(full_df,
+                       UserEmail,
+                       Gender,
+                       Age,
+                       EmploymentStatus, 
+                       StudyAbroad,
+                       ChineseZodiac,
+                       Budget)
+
+#Recode data (for future use)
+
+
+#Add index columns
+id <- seq(1, nrow(full_df_demo))
+full_df_demo <- cbind(full_df_demo, id)
+full_df_demo <- full_df_demo %>% select('id', everything())
+                  
 #Saving Data ----
-write.csv(df, "Persona-Ced.csv", row.names = F)
+write.csv(full_df_cl, "Persona-Ced.csv", row.names = F)
 
 #######################
 
@@ -84,7 +104,7 @@ for(i in 1:length(q_list)){
 #Rename columns
 colnames(personas_df) <- as.character(seq(1, ncol(personas_df)))
 
-#Remove duplicate columns
+#Transform data frame
 n_col <- ncol(personas_df)
 col_to_keep <- seq(2, n_col, 3)
 personas_df <- personas_df %>% select(-col_to_keep)
@@ -94,3 +114,11 @@ personas_df <- personas_df %>% select(-col_to_keep)
 
 personas_df <- personas_df %>% select('3', everything())
 colnames(personas_df) <- c('cluster', col_names)
+
+#Add index columns
+id <- seq(1, nrow(personas_df))
+personas_df <- cbind(personas_df, id)
+personas_df <- personas_df %>% select('id', everything())
+
+#NOTE: FLEXCLUST CLUSTERING DID NOT CHANGE THE INDEX OF THE OBSERVATIONS. THEREFORE, TO GET DEMOGRAPHIC 
+# INFORMATION, WE CAN MATCH BY INDEX AND REFER TO THE FULL DATASET.
