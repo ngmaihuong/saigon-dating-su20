@@ -64,7 +64,7 @@ col_names <- colnames(df)
 fc_cont <- new('flexclustControl')
 fc_cont@iter.max <- 30
 
-my_seed <- 1
+my_seed <- 100
 my_family <- 'ejaccard'
 num_clust <- 4
 
@@ -81,16 +81,19 @@ pop_av_dist <- with(cl@clusinfo,
                     sum(size*av_dist)/sum(size))
 main_txt <- paste('kcca ', cl@family@name, ' - ',
                   num_clust, ' clusters (',
-                  389, ' sample, seed = ', my_seed,
+                  nrow(df), ' sample, seed = ', my_seed,
                   ')', sep = '')
 
-# Neighborhood Graph on 1st principle components ----
+#Neighborhood Graph on 1st principle components ----
 df.pca <- prcomp(df)
 plot(cl, data = as.matrix(df), project = df.pca,
      main = main_txt, 
      sub = paste('\nAv Dist = ', format(pop_av_dist, digits = 5),
                 ', k = ', cl@k, sep = '')
 )
+
+# Evaluate pca
+screeplot(df.pca)
 
 #Activity profiles for each segment ----
 barchart(cl, main = main_txt, strip.predix = '#', scales = list(cex=0.6))
@@ -141,8 +144,8 @@ cluster4 <- filter(cls_with_demo, cluster == 4)
 
 #USE SUMMARY() FOR DESCRIPTIVE STATISTICS
 summary(cluster1, maxsum = nlevels(cluster1$EmploymentStatus))
-summary(cluster2, maxsum = nlevels(cluster1$EmploymentStatus))
-summary(cluster3, maxsum = nlevels(cluster1$EmploymentStatus))
-summary(cluster4, maxsum = nlevels(cluster1$EmploymentStatus))
+summary(cluster2, maxsum = nlevels(cluster2$EmploymentStatus))
+summary(cluster3, maxsum = nlevels(cluster3$EmploymentStatus))
+summary(cluster4, maxsum = nlevels(cluster4$EmploymentStatus))
 
 #end
